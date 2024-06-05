@@ -12,7 +12,7 @@ rustytools is under development.  Please check back for updates. For now, we hav
 
 First you need to have an updated Rust installation. Go to this [site](https://www.rust-lang.org/tools/install) to learn how to install Rust.
 
-To install mergebamsR:
+To install rustytools:
 
 ```r
 remotes::install_github("furlan-lab/rustytools")
