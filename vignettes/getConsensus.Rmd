@@ -39,7 +39,7 @@ This function will process a fasta file that has been processed using a tool suc
 ```{r}
 root<-file.path(.libPaths(), "rustytools/extdata")
 tfasta=file.path(root, "test.fa")
-results<-get_consensus(tfasta, cores=1, split=1)
+results<-get_consensus(tfasta, cores=1)
 results[[1]]
 ```
 

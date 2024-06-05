@@ -1,18 +1,18 @@
 
 
-find_cuts<-function(len, n){
-  cut<-ceiling(len/n)
-  c(seq(1, len, by = cut), len)
-}
-
-
-split_string<-function(string, n){
-  cuts<-find_cuts(nchar(string), n)
-  string<-sapply(1:(length(cuts)-1), function(n){
-    substring(string, cuts[n], cuts[n+1])
-  })
-  return(list(cuts, string))
-}
+# find_cuts<-function(len, n){
+#   cut<-ceiling(len/n)
+#   c(seq(1, len, by = cut), len)
+# }
+#
+#
+# split_string<-function(string, n){
+#   cuts<-find_cuts(nchar(string), n)
+#   string<-sapply(1:(length(cuts)-1), function(n){
+#     substring(string, cuts[n], cuts[n+1])
+#   })
+#   return(list(cuts, string))
+# }
 
 #' Get Consensus Sequences from a FASTA File
 #'
@@ -46,7 +46,8 @@ split_string<-function(string, n){
 #' @references This documentation was written by ChatGPT v4o - OpenAI, conversation with the author, 6-5-2024.
 #' @export
 
-get_consensus<-function(fasta, splits = 10000, cores=1, genome="hg38", test_with_n = NULL){
+#get_consensus<-function(fasta, splits = 10000, cores=1, genome="hg38", test_with_n = NULL){
+get_consensus<-function(fasta, cores=1, genome="hg38", test_with_n = NULL){
   if(!file.exists(fasta)) {stop("Cannot find fasta")}
   message(paste0("Reading fasta: ", fasta, "..."))
   fa<-seqinr::read.fasta(file = fasta,
@@ -70,7 +71,6 @@ get_consensus<-function(fasta, splits = 10000, cores=1, genome="hg38", test_with
     #   getconsensus( xs[[2]][j], xs[[1]][j])
     # }, mc.cores = cores)
     res<-getconsensus(fa[[i]][1], 1:nchar(fa[[i]][1]))
-    res
     res<-unlist(res)
     if(length(res)>0){
       df<-t(data.frame(strsplit(res, "_")))
