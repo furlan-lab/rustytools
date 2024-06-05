@@ -39,7 +39,6 @@
 #' @references This documentation was written by ChatGPT v4o - OpenAI, conversation with the author, 6-5-2024.
 #' @export
 
-#get_consensus<-function(fasta, splits = 10000, cores=1, genome="hg38", test_with_n = NULL){
 get_consensus<-function(fasta, cores=1, genome="hg38", test_with_n = NULL){
   if(!file.exists(fasta)) {stop("Cannot find fasta")}
   message(paste0("Reading fasta: ", fasta, "..."))
