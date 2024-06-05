@@ -17,7 +17,7 @@ First you need to have an updated Rust installation. Go to this [site](https://w
 You will need to have the devtools package installed...
 
 ```{r, eval=F}
-devtools::install_github("scfurl/rustytools", force=T)
+devtools::install_github("furlan-lab/rustytools", force=T)
 ```
 
 
