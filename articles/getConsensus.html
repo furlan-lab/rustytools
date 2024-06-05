@@ -109,7 +109,7 @@ install Rust.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span>list<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/ls.html" class="external-link">ls</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressPackageStartupMessages</a></span><span class="op">(</span><span class="op">{</span></span>
-<span>  <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://scfurl.github.io/rustytools/" class="external-link">rustytools</a></span><span class="op">)</span></span>
+<span>  <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://furlan-lab.github.io/rustytools/">rustytools</a></span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
@@ -123,41 +123,43 @@ invoked as follows:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">root</span><span class="op">&lt;-</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/libPaths.html" class="external-link">.libPaths</a></span><span class="op">(</span><span class="op">)</span>, <span class="st">"rustytools/extdata"</span><span class="op">)</span></span>
 <span><span class="va">tfasta</span><span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">root</span>, <span class="st">"test.fa"</span><span class="op">)</span></span>
-<span><span class="va">results</span><span class="op">&lt;-</span><span class="fu"><a href="../reference/get_consensus.html">get_consensus</a></span><span class="op">(</span><span class="va">tfasta</span>, cores<span class="op">=</span><span class="fl">1</span>, split<span class="op">=</span><span class="fl">1</span><span class="op">)</span></span>
+<span><span class="va">results</span><span class="op">&lt;-</span><span class="fu"><a href="../reference/get_consensus.html">get_consensus</a></span><span class="op">(</span><span class="va">tfasta</span>, cores<span class="op">=</span><span class="fl">1</span>, genome<span class="op">=</span><span class="st">"toy"</span><span class="op">)</span></span>
 <span><span class="va">results</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span></code></pre></div>
-<pre><code><span><span class="co">## GRanges object with 7 ranges and 1 metadata column:</span></span>
-<span><span class="co">##       seqnames    ranges strand | mcols.sequence</span></span>
-<span><span class="co">##          &lt;Rle&gt; &lt;IRanges&gt;  &lt;Rle&gt; |    &lt;character&gt;</span></span>
-<span><span class="co">##   [1]     chr1   238-251      * | ACTGACCTTAAGGT</span></span>
-<span><span class="co">##   [2]    chr12   102-115      * | ACTGACCTTAAGGT</span></span>
-<span><span class="co">##   [3]    chr12   595-608      * | ACTGACCTTAAGGT</span></span>
-<span><span class="co">##   [4]     chr3   317-330      * | ACTGACCTTAAGGT</span></span>
-<span><span class="co">##   [5]     chr4   168-181      * | ACTGACCTTAAGGT</span></span>
-<span><span class="co">##   [6]     chr5   171-184      * | ACTGACCTTAAGGT</span></span>
-<span><span class="co">##   [7]     chr6    97-110      * | ACTGACCTTAAGGT</span></span>
+<pre><code><span><span class="co">## GRanges object with 98 ranges and 1 metadata column:</span></span>
+<span><span class="co">##        seqnames    ranges strand | mcols.sequence</span></span>
+<span><span class="co">##           &lt;Rle&gt; &lt;IRanges&gt;  &lt;Rle&gt; |    &lt;character&gt;</span></span>
+<span><span class="co">##    [1]     chr1       238      * |              A</span></span>
+<span><span class="co">##    [2]     chr1       239      * |              C</span></span>
+<span><span class="co">##    [3]     chr1       240      * |              T</span></span>
+<span><span class="co">##    [4]     chr1       241      * |              G</span></span>
+<span><span class="co">##    [5]     chr1       242      * |              A</span></span>
+<span><span class="co">##    ...      ...       ...    ... .            ...</span></span>
+<span><span class="co">##   [94]     chr6       106      * |              A</span></span>
+<span><span class="co">##   [95]     chr6       107      * |              A</span></span>
+<span><span class="co">##   [96]     chr6       108      * |              G</span></span>
+<span><span class="co">##   [97]     chr6       109      * |              G</span></span>
+<span><span class="co">##   [98]     chr6       110      * |              T</span></span>
 <span><span class="co">##   -------</span></span>
-<span><span class="co">##   seqinfo: 7 sequences from hg38 genome</span></span></code></pre>
-<p>In the above toy example we use the split argument to specify how
-many chunks to break the sequence into for parallel processing. In this
-case it doesn’t make sense to split the sequence into chunks because the
-example only has about 500-600 bases for each contig. When running this
-on real fasta sequence from a large genome, one would want to leverage
-parallel processing. In this next block we show how to run get_consensus
-on a big fasta. One can specify the name of the genome using the genome
-argument. For hg38, we find that this takes about 1-3 minutes per
-chromosome when using 16 cores on an intel iMac. We recommend splitting
-the fasta contigs into 10000 chunks as below.</p>
+<span><span class="co">##   seqinfo: 7 sequences from toy genome</span></span></code></pre>
+<p>In the above toy example we use the cores argument set to 1.
+get_consensus works by splitting work for each contig (chromosome)
+across cores. In the above example, it doesn’t make sense to split the
+contigs across cores because the contig has about 500-600 bases. When
+running this on real fasta sequence from a large genome, one would want
+to leverage parallel processing and process each contig using a core. In
+this next block we show how to run get_consensus on a big fasta.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fasta</span><span class="op">=</span><span class="st">"abigfasta.fa"</span></span>
 <span><span class="co">#fasta="~/Desktop/GENDX_HLA_Mix1_S1_L001_t1000.fa"</span></span>
-<span><span class="va">results</span><span class="op">&lt;-</span><span class="fu"><a href="../reference/get_consensus.html">get_consensus</a></span><span class="op">(</span><span class="va">fasta</span>, cores<span class="op">=</span><span class="fl">16</span>, split<span class="op">=</span><span class="fl">10000</span>, genome<span class="op">=</span><span class="st">"hg38"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">results</span><span class="op">&lt;-</span><span class="fu"><a href="../reference/get_consensus.html">get_consensus</a></span><span class="op">(</span><span class="va">fasta</span>, cores<span class="op">=</span><span class="fl">16</span>, genome<span class="op">=</span><span class="st">"hg38"</span><span class="op">)</span></span></code></pre></div>
 <p>Before running a full fasta on all contigs, you can check the first n
 contigs of a full sized fasta using the argument test_with_n. Note that
-the full fasta will be read in to ensure appropriate seqinfo data</p>
+the full fasta will be read into memory to ensure appropriate seqinfo
+data</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fasta</span><span class="op">=</span><span class="st">"abigfasta.fa"</span></span>
 <span><span class="co">#fasta="~/Desktop/GENDX_HLA_Mix1_S1_L001_t1000.fa"</span></span>
-<span><span class="va">results</span><span class="op">&lt;-</span><span class="fu"><a href="../reference/get_consensus.html">get_consensus</a></span><span class="op">(</span><span class="va">fasta</span>, cores<span class="op">=</span><span class="fl">16</span>, split<span class="op">=</span><span class="fl">10000</span>, genome<span class="op">=</span><span class="st">"hg38"</span>, test_with_n <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">results</span><span class="op">&lt;-</span><span class="fu"><a href="../reference/get_consensus.html">get_consensus</a></span><span class="op">(</span><span class="va">fasta</span>, cores<span class="op">=</span><span class="fl">16</span>, genome<span class="op">=</span><span class="st">"hg38"</span>, test_with_n <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="appendix">Appendix<a class="anchor" aria-label="anchor" href="#appendix"></a>
