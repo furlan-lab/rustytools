@@ -58,6 +58,26 @@ fasta="abigfasta.fa"
 results<-get_consensus(fasta, cores=16, genome="hg38", test_with_n = 1)
 ```
 
+## Merge
+
+```{r}
+library(GenomicRanges)
+reduced_results<-reduce(results[[1]], min.gapwidth = 2L)
+
+```
+
+
+## Annotation
+```{r}
+library(TxDb.Hsapiens.UCSC.hg38.knownGene)
+library(VariantAnnotation)
+txdb_hg38 <- TxDb.Hsapiens.UCSC.hg38.knownGene
+si<-seqinfo(txdb_hg38)
+reduced_results@seqinfo<-GenomeInfoDb::Seqinfo(seqnames = si@seqnames[1:22], seqlengths = si@seqlengths[1:22], isCircular = rep(NA, 22), genome = "hg38")
+annotated_results <- locateVariants(reduced_results, txdb_hg38, )
+table(annotated_results$LOCATION)
+annotated_results[annotated_results$LOCATION=="coding"]
+```
 
 ## Appendix
 ```{r Appendix}
