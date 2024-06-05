@@ -4,7 +4,13 @@
 \alias{get_consensus}
 \title{Get Consensus Sequences from a FASTA File}
 \usage{
-get_consensus(fasta, splits = 10000, cores = 1, genome = "hg38")
+get_consensus(
+  fasta,
+  splits = 10000,
+  cores = 1,
+  genome = "hg38",
+  test_with_n = NULL
+)
 }
 \arguments{
 \item{fasta}{A character string specifying the path to the FASTA file.}

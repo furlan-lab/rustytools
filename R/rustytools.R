@@ -63,12 +63,14 @@ get_consensus<-function(fasta, splits = 10000, cores=1, genome="hg38", test_with
     if(length(test_with_n)>1){stop("test_with_n must be an integer vector of length 1")}
     final_n = as.integer(test_with_n)
   }
-  allres<-lapply(1:final_n, function(i){
-    message(paste0("Processing ", nchar(fa[[i]][1]), " bases from ", names(fa)[i]))
-    xs<-split_string(fa[[i]][1], splits)
-    res<-pbmclapply(1:length(xs[[2]]), function(j){
-      getconsensus( xs[[2]][j], xs[[1]][j])
-    }, mc.cores = cores)
+  allres<-pbmclapply(1:final_n, function(i){
+    #message(paste0("Processing ", nchar(fa[[i]][1]), " bases from ", names(fa)[i]))
+    # xs<-split_string(fa[[i]][1], splits)
+    # res<-pbmclapply(1:length(xs[[2]]), function(j){
+    #   getconsensus( xs[[2]][j], xs[[1]][j])
+    # }, mc.cores = cores)
+    res<-getconsensus(fa[[i]][1], 1:nchar(fa[[i]][1]))
+    res
     res<-unlist(res)
     if(length(res)>0){
       df<-t(data.frame(strsplit(res, "_")))
@@ -76,7 +78,7 @@ get_consensus<-function(fasta, splits = 10000, cores=1, genome="hg38", test_with
                              ranges = IRanges(start = as.numeric(df[,1]), end = as.numeric(df[,2])),
                              mcols = DataFrame(sequence=df[,3]), seqinfo = seqinfo)
     }
-  })
+  },mc.cores = cores)
   allres <- do.call(c, allres)
   GenomicRanges::GRangesList(allres)
 }

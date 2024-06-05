@@ -11,7 +11,7 @@ not that complicated
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://scfurl.github.io/rustytools/}
+  \item \url{https://furlan-lab.github.io/rustytools/}
 }
 
 }

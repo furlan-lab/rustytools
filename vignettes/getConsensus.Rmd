@@ -43,12 +43,12 @@ results<-get_consensus(tfasta, cores=1, split=1)
 results[[1]]
 ```
 
-In the above toy example we use the split argument to specify how many chunks to break the sequence into for parallel processing.  In this case it doesn't make sense to split the sequence into chunks because the example only has about 500-600 bases for each contig.  When running this on real fasta sequence from a large genome, one would want to leverage parallel processing.  In this next block we show how to run get_consensus on a big fasta.  One can specify the name of the genome using the genome argument.  For hg38, we find that this takes about 1-3 minutes per chromosome when using 16 cores on an intel iMac.  We recommend splitting the fasta contigs into 10000 chunks as below.
+In the above toy example we use the split argument to specify how many chunks to break the sequence into for parallel processing.  In this case it doesn't make sense to split the sequence into chunks because the example only has about 500-600 bases for each contig.  When running this on real fasta sequence from a large genome, one would want to leverage parallel processing.  In this next block we show how to run get_consensus on a big fasta.  One can specify the name of the genome using the genome argument.  
 
 ```{r, eval=F}
 fasta="abigfasta.fa"
 #fasta="~/Desktop/GENDX_HLA_Mix1_S1_L001_t1000.fa"
-results<-get_consensus(fasta, cores=16, split=10000, genome="hg38")
+results<-get_consensus(fasta, cores=16, split=1, genome="hg38")
 ```
 
 Before running a full fasta on all contigs, you can check the first n contigs of a full sized fasta using the argument test_with_n. Note that the full fasta will be read in to ensure appropriate seqinfo data
