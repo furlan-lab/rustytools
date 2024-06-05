@@ -39,23 +39,23 @@ This function will process a fasta file that has been processed using a tool suc
 ```{r}
 root<-file.path(.libPaths(), "rustytools/extdata")
 tfasta=file.path(root, "test.fa")
-results<-get_consensus(tfasta, cores=1)
+results<-get_consensus(tfasta, cores=1, genome="toy")
 results[[1]]
 ```
 
-In the above toy example we use the split argument to specify how many chunks to break the sequence into for parallel processing.  In this case it doesn't make sense to split the sequence into chunks because the example only has about 500-600 bases for each contig.  When running this on real fasta sequence from a large genome, one would want to leverage parallel processing.  In this next block we show how to run get_consensus on a big fasta.  One can specify the name of the genome using the genome argument.  
+In the above toy example we use the cores argument set to 1.  get_consensus works by splitting work for each contig (chromosome) across cores.  In the above example, it doesn't make sense to split the contigs across cores because the contig has about 500-600 bases.  When running this on real fasta sequence from a large genome, one would want to leverage parallel processing and process each contig using a core.  In this next block we show how to run get_consensus on a big fasta.
 
 ```{r, eval=F}
 fasta="abigfasta.fa"
 #fasta="~/Desktop/GENDX_HLA_Mix1_S1_L001_t1000.fa"
-results<-get_consensus(fasta, cores=16, split=1, genome="hg38")
+results<-get_consensus(fasta, cores=16, genome="hg38")
 ```
 
-Before running a full fasta on all contigs, you can check the first n contigs of a full sized fasta using the argument test_with_n. Note that the full fasta will be read in to ensure appropriate seqinfo data
+Before running a full fasta on all contigs, you can check the first n contigs of a full sized fasta using the argument test_with_n. Note that the full fasta will be read into memory to ensure appropriate seqinfo data
 ```{r, eval=F}
 fasta="abigfasta.fa"
 #fasta="~/Desktop/GENDX_HLA_Mix1_S1_L001_t1000.fa"
-results<-get_consensus(fasta, cores=16, split=10000, genome="hg38", test_with_n = 1)
+results<-get_consensus(fasta, cores=16, genome="hg38", test_with_n = 1)
 ```
 
 

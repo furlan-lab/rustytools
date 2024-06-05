@@ -16,27 +16,20 @@
 
 #' Get Consensus Sequences from a FASTA File
 #'
-#' This function reads a DNA sequence from a given FASTA file, splits the sequences for parallel processing,
-#' and retrieves consensus sequences for each split segment.
+#' This function reads a DNA FASTA file, processes the sequences, and returns consensus sequences
+#' as a GRangesList. The function can optionally use multiple cores for parallel processing.
 #'
-#' @param fasta A character string specifying the path to the FASTA file.
-#' @param splits An integer specifying the number of segments to split the sequence into for processing. Default is 10,000.
+#' @param fasta A string specifying the path to the input FASTA file.
 #' @param cores An integer specifying the number of cores to use for parallel processing. Default is 1.
-#' @param genome A character string specifying the genome version for sequence information. Default is "hg38".
+#' @param genome A string specifying the genome build. Default is "hg38".
+#' @param test_with_n An optional integer specifying the number of sequences to process for testing. If NULL, all sequences are processed. Default is NULL.
 #'
-#' @return A \code{GRanges} object containing the consensus sequences with their genomic ranges and associated sequence information.
-#'
-#' @details The function reads the input FASTA file, splits each sequence into smaller segments for parallel processing,
-#'          and retrieves consensus sequences for each segment. The results are combined into a \code{GRanges} object.
+#' @return A GRangesList containing the consensus sequences with their coordinates and sequence information.
 #'
 #' @examples
 #' \dontrun{
-#'   # Example usage:
-#'   fasta_file <- "path/to/your/file.fasta"
-#'   consensus <- get_consensus(fasta_file, splits = 5000, cores = 2, genome = "hg38")
-#'   print(consensus)
+#' consensus <- get_consensus("path/to/fasta/file.fasta", cores=2, genome="hg19")
 #' }
-#'
 #' @importFrom seqinr read.fasta
 #' @importFrom GenomeInfoDb Seqinfo
 #' @importFrom pbmcapply pbmclapply
@@ -55,7 +48,7 @@ get_consensus<-function(fasta, cores=1, genome="hg38", test_with_n = NULL){
                  set.attributes = TRUE)
   message("Fasta ingestion complete")
   message("Building sequence info")
-  seqinfo<-GenomeInfoDb::Seqinfo(names(fa), seqlengths=sapply(1:length(fa), function(n) nchar(fa[[n]][1])), isCircular=NA, genome=genome)
+  seqinfo<-Seqinfo(names(fa), seqlengths=sapply(1:length(fa), function(n) nchar(fa[[n]][1])), isCircular=NA, genome=genome)
   # x<-fa[[1]][1]
 
   if(is.null(test_with_n)){
@@ -70,7 +63,7 @@ get_consensus<-function(fasta, cores=1, genome="hg38", test_with_n = NULL){
     # res<-pbmclapply(1:length(xs[[2]]), function(j){
     #   getconsensus( xs[[2]][j], xs[[1]][j])
     # }, mc.cores = cores)
-    res<-getconsensus(fa[[i]][1], 1:nchar(fa[[i]][1]))
+    res<-getconsensus(fa[[i]][1], 1)
     res<-unlist(res)
     if(length(res)>0){
       df<-t(data.frame(strsplit(res, "_")))

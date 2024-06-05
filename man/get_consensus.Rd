@@ -4,42 +4,28 @@
 \alias{get_consensus}
 \title{Get Consensus Sequences from a FASTA File}
 \usage{
-get_consensus(
-  fasta,
-  splits = 10000,
-  cores = 1,
-  genome = "hg38",
-  test_with_n = NULL
-)
+get_consensus(fasta, cores = 1, genome = "hg38", test_with_n = NULL)
 }
 \arguments{
-\item{fasta}{A character string specifying the path to the FASTA file.}
-
-\item{splits}{An integer specifying the number of segments to split the sequence into for processing. Default is 10,000.}
+\item{fasta}{A string specifying the path to the input FASTA file.}
 
 \item{cores}{An integer specifying the number of cores to use for parallel processing. Default is 1.}
 
-\item{genome}{A character string specifying the genome version for sequence information. Default is "hg38".}
+\item{genome}{A string specifying the genome build. Default is "hg38".}
+
+\item{test_with_n}{An optional integer specifying the number of sequences to process for testing. If NULL, all sequences are processed. Default is NULL.}
 }
 \value{
-A \code{GRanges} object containing the consensus sequences with their genomic ranges and associated sequence information.
+A GRangesList containing the consensus sequences with their coordinates and sequence information.
 }
 \description{
-This function reads a DNA sequence from a given FASTA file, splits the sequences for parallel processing,
-and retrieves consensus sequences for each split segment.
-}
-\details{
-The function reads the input FASTA file, splits each sequence into smaller segments for parallel processing,
-and retrieves consensus sequences for each segment. The results are combined into a \code{GRanges} object.
+This function reads a DNA FASTA file, processes the sequences, and returns consensus sequences
+as a GRangesList. The function can optionally use multiple cores for parallel processing.
 }
 \examples{
 \dontrun{
-  # Example usage:
-  fasta_file <- "path/to/your/file.fasta"
-  consensus <- get_consensus(fasta_file, splits = 5000, cores = 2, genome = "hg38")
-  print(consensus)
+consensus <- get_consensus("path/to/fasta/file.fasta", cores=2, genome="hg19")
 }
-
 }
 \references{
 This documentation was written by ChatGPT v4o - OpenAI, conversation with the author, 6-5-2024.
