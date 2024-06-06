@@ -3,7 +3,7 @@ pkgdown: 2.0.7
 pkgdown_sha: ~
 articles:
   getConsensus: getConsensus.html
-last_built: 2024-06-06T03:31Z
+last_built: 2024-06-06T05:10Z
 urls:
   reference: https://furlan-lab.github.io/rustytools/reference
   article: https://furlan-lab.github.io/rustytools/articles

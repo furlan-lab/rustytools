@@ -242,49 +242,12 @@ data</p>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/jorainer/ensembldb" class="external-link">ensembldb</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">EnsDb.Hsapiens.v86</span><span class="op">)</span></span>
 <span><span class="va">annoGR</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/ChIPpeakAnno/man/toGRanges.html" class="external-link">toGRanges</a></span><span class="op">(</span><span class="va">EnsDb.Hsapiens.v86</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/ChIPpeakAnno/man/annoPeaks.html" class="external-link">annoPeaks</a></span><span class="op">(</span><span class="va">reduced_results</span>, <span class="va">annoGR</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## GRanges object with 2072 ranges and 8 metadata columns:</span></span>
-<span><span class="co">##          seqnames            ranges strand |        peak         feature</span></span>
-<span><span class="co">##             &lt;Rle&gt;         &lt;IRanges&gt;  &lt;Rle&gt; | &lt;character&gt;     &lt;character&gt;</span></span>
-<span><span class="co">##       X1     chr1     832502-832521      * |          X1 ENSG00000230021</span></span>
-<span><span class="co">##       X9     chr1   2365280-2365300      * |          X9 ENSG00000272420</span></span>
-<span><span class="co">##      X28     chr1   4408521-4408539      * |         X28 ENSG00000235054</span></span>
-<span><span class="co">##      X57     chr1   6781136-6781154      * |         X57 ENSG00000171735</span></span>
-<span><span class="co">##      X61     chr1   7219261-7219296      * |         X61 ENSG00000207056</span></span>
-<span><span class="co">##      ...      ...               ...    ... .         ...             ...</span></span>
-<span><span class="co">##   X22273    chr22 34012926-34012948      * |      X22273 ENSG00000236052</span></span>
-<span><span class="co">##   X22295    chr22 36423939-36423957      * |      X22295 ENSG00000237668</span></span>
-<span><span class="co">##   X22313    chr22 37820879-37820898      * |      X22313 ENSG00000128310</span></span>
-<span><span class="co">##   X22320    chr22 38573300-38573319      * |      X22320 ENSG00000100206</span></span>
-<span><span class="co">##   X22324    chr22 39067883-39067904      * |      X22324 ENSG00000259421</span></span>
-<span><span class="co">##             feature.ranges feature.strand  distance insideFeature</span></span>
-<span><span class="co">##                  &lt;IRanges&gt;          &lt;Rle&gt; &lt;integer&gt;   &lt;character&gt;</span></span>
-<span><span class="co">##       X1     585989-827796              -      4705      upstream</span></span>
-<span><span class="co">##       X9   2363061-2363628              -      1651      upstream</span></span>
-<span><span class="co">##      X28   4412027-4424689              +      3487      upstream</span></span>
-<span><span class="co">##      X57   6785324-7769706              +      4169      upstream</span></span>
-<span><span class="co">##      X61   7219360-7219524              +        63      upstream</span></span>
-<span><span class="co">##      ...               ...            ...       ...           ...</span></span>
-<span><span class="co">##   X22273 34017473-34188425              +      4524      upstream</span></span>
-<span><span class="co">##   X22295 36421273-36421644              -      2294      upstream</span></span>
-<span><span class="co">##   X22313 37823382-37825495              +      2483      upstream</span></span>
-<span><span class="co">##   X22320 38518949-38570286              -      3013      upstream</span></span>
-<span><span class="co">##   X22324 39070414-39070671              +      2509      upstream</span></span>
-<span><span class="co">##          distanceToSite       gene_name</span></span>
-<span><span class="co">##               &lt;integer&gt;     &lt;character&gt;</span></span>
-<span><span class="co">##       X1           4705    RP5-857K21.4</span></span>
-<span><span class="co">##       X9           1651     RP4-740C4.7</span></span>
-<span><span class="co">##      X28           3487   RP5-1166F10.1</span></span>
-<span><span class="co">##      X57           4169          CAMTA1</span></span>
-<span><span class="co">##      X61             63         RNU1-8P</span></span>
-<span><span class="co">##      ...            ...             ...</span></span>
-<span><span class="co">##   X22273           4524 LL22NC03-86D4.1</span></span>
-<span><span class="co">##   X22295           2294       RPS15AP38</span></span>
-<span><span class="co">##   X22313           2483           GALR3</span></span>
-<span><span class="co">##   X22320           3013            DMC1</span></span>
-<span><span class="co">##   X22324           2509    CTA-150C2.20</span></span>
-<span><span class="co">##   -------</span></span>
-<span><span class="co">##   seqinfo: 22 sequences from hg38 genome</span></span></code></pre>
+<span><span class="fu"><a href="https://rdrr.io/pkg/GenomeInfoDb/man/seqlevelsStyle.html" class="external-link">seqlevelsStyle</a></span><span class="op">(</span><span class="va">reduced_results</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/GenomeInfoDb/man/seqlevelsStyle.html" class="external-link">seqlevelsStyle</a></span><span class="op">(</span><span class="va">annoGR</span><span class="op">)</span></span>
+<span><span class="va">annotated_results3</span><span class="op">&lt;-</span><span class="fu"><a href="https://rdrr.io/pkg/ChIPpeakAnno/man/annoPeaks.html" class="external-link">annoPeaks</a></span><span class="op">(</span><span class="va">reduced_results</span>, <span class="va">annoGR</span>, bindingType <span class="op">=</span> <span class="st">"fullRange"</span><span class="op">)</span></span>
+<span><span class="va">annotated_results3</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/grep.html" class="external-link">grepl</a></span><span class="op">(</span><span class="st">"^HLA"</span>, <span class="va">annotated_results3</span><span class="op">$</span><span class="va">gene_name</span><span class="op">)</span><span class="op">]</span><span class="op">$</span><span class="va">gene_name</span></span></code></pre></div>
+<pre><code><span><span class="co">##  [1] "HLA-F-AS1" "HLA-G"     "HLA-L"     "HLA-L"     "HLA-DRB9"  "HLA-DRB9" </span></span>
+<span><span class="co">##  [7] "HLA-DRB9"  "HLA-DRB9"  "HLA-DRB9"  "HLA-DRB6"  "HLA-DRB1"  "HLA-DRB6" </span></span>
+<span><span class="co">## [13] "HLA-DRB1"  "HLA-Z"     "HLA-Z"     "HLA-DOA"   "HLA-DPA1"  "HLA-DPA3"</span></span></code></pre>
 </div>
 </div>
 <div class="section level2">
