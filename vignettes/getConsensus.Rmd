@@ -86,9 +86,10 @@ annotated_results[annotated_results$LOCATION=="coding"]
 # BiocManager::install("EnsDb.Hsapiens.v86")
 
 library(txdbmaker)
-gtf_file<-"/Users/sfurlan/Library/CloudStorage/OneDrive-FredHutchinsonCancerCenter/computation/refs/GTFs/gencode.v46.annotation.gtf"
+gtf_file<-"/Users/sfurlan/Library/CloudStorage/OneDrive-SharedLibraries-FredHutchinsonCancerCenter/Furlan_Lab - General/resources/refs/gencode.v46.annotation.gtf.gz"
 txdb <- makeTxDbFromGFF(gtf_file, format="gtf", dbxrefTag = "gene_name")
 annotated_results2 <- locateVariants(reduced_results, txdb, AllVariants())
+annotated_results2
 ```
 
 ### Annotation 3
