@@ -5,7 +5,7 @@
 [![Project Status: Active – The project has reached a stable, usable state and is being activelydeveloped.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![Lifecycle:stable](https://img.shields.io/badge/lifecycle-stable-brightgreen.svg)](https://lifecycle.r-lib.org/articles/stages.html)
 
-rustytools is under development.  Please check back for updates. For now, we have implemented one function get_consensus.
+rustytools is still under active development.  Please check back for updates. For now, we have implemented a few function.
 
 
 ## Installation
@@ -20,10 +20,10 @@ remotes::install_github("furlan-lab/rustytools")
 
 ## How to start
 
-We have a vignette for our one function...
+See the vignettes that provide an overview of each function function...
 
-- `vignette("getConsensus")` to explore our bountiful package. 
-
+- `vignette("getConsensus")`
+- `vignette("seqAlign")`
 
 ## License 
 

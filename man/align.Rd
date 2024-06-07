@@ -23,7 +23,11 @@ The alignment score.
 This function aligns two strings using a Rust backend and returns the alignment score.
 }
 \examples{
+\dontrun{
 align("AGCT", "AGC", "global", TRUE)
 align("AGCT", "AGC")
-
+}
+}
+\references{
+This documentation was written by ChatGPT v4o - OpenAI, conversation with the author, 6-5-2024.
 }

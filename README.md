@@ -1,11 +1,9 @@
 # rustytools
 
-version 0.0.0.9000
+version 0.0.1
 
 <p align="center"><img src="man/figures/rustytools.png" alt="" width="500"></a></p>
 <hr>
-
-Under construction
 
 **Visit [HowTo](https://furlan-lab.github.io/rustytools/) for installation instructions and tutorials**
 
