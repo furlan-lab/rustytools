@@ -13,6 +13,9 @@
     <loc>https://furlan-lab.github.io/rustytools/articles/index.html</loc>
   </url>
   <url>
+    <loc>https://furlan-lab.github.io/rustytools/articles/seqAlign.html</loc>
+  </url>
+  <url>
     <loc>https://furlan-lab.github.io/rustytools/authors.html</loc>
   </url>
   <url>
@@ -20,6 +23,9 @@
   </url>
   <url>
     <loc>https://furlan-lab.github.io/rustytools/news/index.html</loc>
+  </url>
+  <url>
+    <loc>https://furlan-lab.github.io/rustytools/reference/align.html</loc>
   </url>
   <url>
     <loc>https://furlan-lab.github.io/rustytools/reference/get_consensus.html</loc>
