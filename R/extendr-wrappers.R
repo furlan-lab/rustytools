@@ -15,7 +15,7 @@ NULL
 getconsensus <- function(rstring, index_add) .Call(wrap__getconsensus, rstring, index_add)
 
 #' @export
-align <- function(rstring1, rstring2, atype, verbose) .Call(wrap__align, rstring1, rstring2, atype, verbose)
+align_rust <- function(rstring1, rstring2, atype, verbose) .Call(wrap__align_rust, rstring1, rstring2, atype, verbose)
 
 
 # nolint end

@@ -50,10 +50,14 @@ reference:
   desc: Main functions used in rustytools
   contents:
   - get_consensus
+  - align
   - rustytools-package
 articles:
 - title: Get Consensus
   navbar: Get Consensus
   contents:
   - getConsensus
-
+- title: Pairwise Alignment
+  navbar: Pairwise Alignment
+  contents:
+  - seqAlign

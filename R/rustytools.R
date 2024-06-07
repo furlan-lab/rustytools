@@ -75,6 +75,33 @@ get_consensus<-function(fasta, cores=1, genome="hg38", test_with_n = NULL){
   GenomicRanges::GRangesList(allres)
 }
 
+#' Aligns two strings using the specified alignment type.
+#'
+#' This function aligns two strings using a Rust backend and returns the alignment score.
+#'
+#' @param s1 A character string representing the first sequence to align.
+#' @param s2 A character string representing the second sequence to align.
+#' @param atype A character string specifying the type of alignment.
+#' Possible values are "local", "global", or "semi-global". Default is "local".
+#' @param verbose A logical value indicating whether to print detailed output. Default is FALSE.
+#'
+#' @return The alignment score.
+#'
+#' @examples
+#' \dontrun{
+#' align("AGCT", "AGC", "global", TRUE)
+#' align("AGCT", "AGC")
+#' }
+#' @references This documentation was written by ChatGPT v4o - OpenAI, conversation with the author, 6-5-2024.
+#' @export
+
+align<-function(s1, s2, atype = c("local", "global", "semi-global"), verbose = F){
+  atype<-match.arg(atype)
+  align_rust(s1, s2, atype, verbose)
+}
+
+
+
 #
 #
 #

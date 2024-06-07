@@ -16,7 +16,7 @@ fn getconsensus(rstring: Robj, index_add: Robj) -> Robj {
 
 /// @export
 #[extendr]
-fn align(rstring1: Robj, rstring2: Robj, atype: Robj, verbose: Robj) -> Robj {
+fn align_rust(rstring1: Robj, rstring2: Robj, atype: Robj, verbose: Robj) -> Robj {
     // eprint!("rstring1: {:?}, rstring2: {:?}", rstring1, rstring2);
     let atype = atype.as_str_vector().unwrap().first().unwrap().to_string();
     let x = rstring1.as_str_vector().unwrap().first().unwrap().to_string().into_bytes();
@@ -81,5 +81,5 @@ fn pretty(rstring1: Robj, rstring2: Robj, atype: Robj, verbose: Robj) {
 extendr_module! {
     mod rustytools;
     fn getconsensus;
-    fn align;
+    fn align_rust;
 }
