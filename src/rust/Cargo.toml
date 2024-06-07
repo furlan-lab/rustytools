@@ -10,3 +10,4 @@ name = 'rustytools'
 
 [dependencies]
 extendr-api = '*'
+bio-types = ">=0.12"
