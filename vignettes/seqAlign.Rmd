@@ -72,12 +72,12 @@ seu$cloneB_score<-sapply(seu$cdr3_nt, function(seq) align(seq, cloneB, atype = "
 seu$cloneD_score<-sapply(seu$cdr3_nt, function(seq) align(seq, cloneD, atype = "local", verbose = F))
 seu$cloneE_score<-sapply(seu$cdr3_nt, function(seq) align(seq, cloneE, atype = "local", verbose = F))
 
-FeaturePlot(seu, features = c("cloneB_score", "cloneC_score", "cloneD_score", "cloneE_score"), order = T, keep.scale="all")
+FeaturePlot(seu, features = c("cloneB_score", "cloneC_score", "cloneD_score", "cloneE_score"), order = T, keep.scale="all", cols = c("grey90", "red"), min.cutoff = "q20")
 
 Biostrings::pairwiseAlignment(putative[1], cloneC, type="global-local")
 Biostrings::pairwiseAlignment(putative[2], cloneB, type="global-local")
 
-
+FeaturePlot_scCustom(seu, features = "CDKN2A")
 ```
 
 ## Appendix
