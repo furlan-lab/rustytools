@@ -7,10 +7,10 @@
     <loc>https://furlan-lab.github.io/rustytools/LICENSE.html</loc>
   </url>
   <url>
-    <loc>https://furlan-lab.github.io/rustytools/articles/getConsensus.html</loc>
+    <loc>https://furlan-lab.github.io/rustytools/articles/index.html</loc>
   </url>
   <url>
-    <loc>https://furlan-lab.github.io/rustytools/articles/index.html</loc>
+    <loc>https://furlan-lab.github.io/rustytools/articles/pcha.html</loc>
   </url>
   <url>
     <loc>https://furlan-lab.github.io/rustytools/articles/seqAlign.html</loc>
@@ -32,6 +32,9 @@
   </url>
   <url>
     <loc>https://furlan-lab.github.io/rustytools/reference/index.html</loc>
+  </url>
+  <url>
+    <loc>https://furlan-lab.github.io/rustytools/reference/pcha.html</loc>
   </url>
   <url>
     <loc>https://furlan-lab.github.io/rustytools/reference/rustytools-package.html</loc>
