@@ -165,11 +165,13 @@ PCA space (typically <em>k</em> ≈ 30, <em>m</em> ≈ 100).</p>
 </h4>
 <p>For each edge (<em>i</em>, <em>j</em>) in that graph set</p>
 <p><span class="math display">$$
-A_{ij}
-\;=\;
-\exp\!\Bigl(-\tfrac{d(i,j)^2}{\sigma_i\,\sigma_j}\Bigr)
-\quad\text{and}\quad
-A_{ij}=0\quad\text{if $j$ is not a kNN of $i$.}
+A_{ij} \;=\;
+\begin{cases}
+  \displaystyle
+  \exp\!\Bigl(-\frac{d(i,j)^2}{\sigma_i\,\sigma_j}\Bigr),
+    &amp; j\in\mathrm{kNN}(i),\\[6pt]
+  0, &amp; \text{otherwise.}
+\end{cases}
 $$</span></p>
 <p>Local bandwidths σᵢ make the kernel <strong>anisotropic</strong> so
 dense and sparse regions of the manifold are treated equally.</p>
