@@ -1,0 +1,75 @@
+url: https://furlan-lab.github.io/rustytools/
+template:
+  bootstrap: 5
+  bootswatch: litera
+  # bslib:
+  #   heading_font:
+  #     google:
+  #       family: Alegreya Sans SC
+  #       wght: 400
+  #   base_font:
+  #     google:
+  #       family: IBM Plex Sans
+  #   code_font:
+  #     google: Fira Mono
+authors:
+  Scott Furlan:
+    href: https://furlan-lab.github.io
+navbar:
+  bg: primary
+  structure:
+    right:
+    - search
+    - twitter
+    - github
+  components:
+    twitter:
+      icon: fa-twitter
+      href: http://twitter.com/scottfurlan
+      aria-label: Twitter
+    github:
+      icon: fa-github
+      href: https://github.com/furlan-lab/rustytools
+      aria-label: GitHub
+figures:
+  message: no
+  warning: no
+  out.width: 100%
+  dev: ragg::agg_png
+  dpi: 96
+  dev.args: []
+  fig.ext: png
+  fig.width: 6
+  fig.height: ~
+  fig.retina: 2
+  fig.asp: 0.7
+  bg: NA
+  other.parameters: []
+reference:
+- title: rustytools functions
+  desc: Main functions used in rustytools
+  contents:
+  - align
+  - pcha
+  - rustytools-package
+  - get_consensus
+  - find_knee_pt
+  - dgC_from_components
+  - seurat_magic
+articles:
+# - title: Get Consensus
+#   navbar: Get Consensus
+#   contents:
+#   - getConsensus
+- title: Pairwise Alignment
+  navbar: Pairwise Alignment
+  contents:
+  - seqAlign
+- title: PCHA
+  navbar: PCHA
+  contents:
+  - pcha
+- title: Magic
+  navbar: Magic
+  contents:
+  - magic

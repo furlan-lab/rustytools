@@ -1,0 +1,308 @@
+---
+title: "Magic in Rust"
+output: html_document
+date: "2025-05-06"
+always_allow_html: true
+editor_options: 
+  chunk_output_type: console
+---
+
+## Installing Rust
+
+First you need to have an updated Rust installation. Go to this [site](https://www.rust-lang.org/tools/install) to learn how to install Rust.
+
+
+## Installing rustytools
+
+You will need to have the devtools package installed...
+
+```{r, eval=F}
+devtools::install_github("furlan-lab/rustytools", force=T)
+```
+
+
+## Overview of Magic implemented in Rust
+
+*(“Markov Affinity-based Graph Imputation of Cells” – van Dijk et al., 2018)*
+
+| Symbol       | Size    | Meaning                                                                       |
+| ------------ | ------- | ----------------------------------------------------------------------------- |
+| **X**        | *n × g* | raw (or PCA-reduced) expression; rows = cells, cols = genes                   |
+| **d(i,j)**   | –       | Euclidean (or cosine) distance between cell *i* and *j* in PCA space          |
+| **σᵢ**       | –       | **local scale** for cell *i* (distance to its *k*-th nearest neighbour)       |
+| **A**        | *n × n* | symmetrised, locally scaled affinity (“heat”) matrix                          |
+| **D**        | *n × n* | diagonal degree matrix, **D**<sub>ii</sub> = ∑<sub>j</sub> **A**<sub>ij</sub> |
+| **P = D⁻¹A** | *n × n* | row-stochastic Markov transition matrix                                       |
+| **t**        | –       | diffusion time (walk length)                                                  |
+| **Ŷ**        | *n × g* | imputed expression after diffusion                                            |
+
+---
+
+#### 1 k-NN graph in latent space
+
+Compute *k* nearest neighbours in the *m*-dimensional PCA space
+(typically *k* ≈ 30, *m* ≈ 100).
+
+#### 2 Adaptive Gaussian kernel
+
+For each edge (*i*, *j*) in that graph set
+
+$$
+A_{ij}
+\;=\;
+\exp\!\Bigl[ -\tfrac{d(i,j)^2}{\sigma_i\,\sigma_j}\Bigr]
+\quad\text{and}\quad
+A_{ij}=0\;\text{if \(j\) is not a kNN of \(i\)} .
+$$
+
+Local bandwidths σᵢ make the kernel **anisotropic** so dense and sparse
+regions of the manifold are treated equally.
+
+##### Symmetrise
+
+$$
+A \;←\; \tfrac12\,(A + A^{\!\top})
+$$
+
+#### 3 Markov normalisation
+
+$$
+P \;=\; D^{-1}A,
+\quad
+D_{ii} = \sum_{j} A_{ij}.
+$$
+
+Now each row of **P** sums to 1 → one step of a random walk on the cell graph.
+
+#### 4 Diffusion (raise to power *t*)
+
+There are two equivalent views:
+
+* **Spectral**
+  Diagonalise **P** = Ψ Λ Ψ⁻¹ with eigenvalues 1 = λ₀ > λ₁ ≥ λ₂ …
+  Then
+
+  $$
+  P^{t} \;=\; \Psi\,\Lambda^{t}\,\Psi^{-1},
+  \qquad
+  \Lambda^{t} = \operatorname{diag}(\lambda_k^{t}).
+  $$
+
+  Small eigenmodes (high-frequency noise) decay as λₖᵗ.
+
+* **Random-walk**
+  Entry (i,j) of **Pᵗ** is the probability that a random walk of
+  length *t* starting at cell *i* ends in cell *j*.
+
+#### 5 Imputation by heat propagation
+
+Apply the diffusion operator to every gene vector:
+
+$$
+\boxed{\;
+\hat X = P^{t}\,X
+\;}
+\quad\Longrightarrow\quad
+\hat x_{ig} = \sum_{j=1}^{n} (P^{t})_{ij}\; x_{jg}.
+$$
+
+Each imputed expression value becomes a weighted average over the
+*t*-step neighbourhood, smoothing drop-outs while respecting manifold
+structure.
+
+---
+
+### Relation to the continuous heat equation
+
+On a smooth data manifold **M**, the generator **L** = *I* – **P**
+approximates the Laplace–Beltrami operator Δ<sub>M</sub>.
+Diffusion time *t* therefore controls how far one solves the
+heat-equation
+
+$$
+\frac{\partial u}{\partial t} \;=\; -\Delta_M\,u, \qquad u(0)=X.
+$$
+
+MAGIC performs this on a *graph* and stops at a user-chosen *t*
+(often 2–6); too small → little denoising, too large → over-smoothing.
+
+---
+
+### Where our Rust kernel fits
+
+Steps 1–3 (k-NN, kernel, Markov row-normalisation) happen in R/Python.
+The Rust function `diffuse_expr_r()` you now have implements **step 4 + 5**:
+
+```text
+(P, X, t)  ──►  Ŷ = Pᵗ · X
+```
+
+It expects **P** already row-stochastic; raising to power *t* and the
+matrix–vector multiply are done in parallel for speed and memory
+efficiency.
+
+
+## How to run MAGIC in R/Rust
+
+First we take some data, subset to the tumor cells that express modest levels of CD33.  Lets see how they look after Magic.
+```{r}
+suppressPackageStartupMessages({
+  library(Seurat)
+  library(scCustomize)
+  library(rustytools)   # your package exposing diffuse_expr_r()
+  library(magrittr)
+})
+
+
+seu <- readRDS("~/Fred Hutch Cancer Center/Furlan_Lab - General/experiments/patient_marrows/annon/AML101/aml101.cds")
+seu$sb <- seu$geno %in% "0" & seu$seurat_clusters %in% c("0", "1", "2", "3", "4", "11")
+#DimPlot(seu, group.by = "sb")
+
+seu <- seu[,seu$sb]
+seu <- NormalizeData(seu, verbose = F) %>% ScaleData(verbose = F) %>% FindVariableFeatures(verbose = F) %>% RunPCA(npcs = 100, verbose = F)
+ElbowPlot(seu, ndims = 100)
+seu <- FindNeighbors(seu, dims = 1:35, verbose = F) %>% FindClusters(verbose = F) %>% RunUMAP(dims = 1:35, n.epochs = 500, verbose = F)
+DimPlot(seu)
+
+
+seu <- seurat_magic(seu, alpha = 1)
+
+DefaultAssay(seu) <- "RNA"
+FeaturePlot_scCustom(seu, "CD33")
+
+DefaultAssay(seu) <- "MAGIC"
+FeaturePlot_scCustom(seu, "CD33")
+
+```
+
+## Changing parameters
+
+An alpha of 1 might be too much.  We can dial it back with an alpha of 0.3 and even further by dropping t to 2.
+```{r}
+
+seu <- seurat_magic(seu, alpha = 0.3)
+
+DefaultAssay(seu) <- "MAGIC"
+FeaturePlot_scCustom(seu, "CD33")
+
+seu <- seurat_magic(seu, alpha = 0.3, t = 2)
+
+DefaultAssay(seu) <- "MAGIC"
+FeaturePlot_scCustom(seu, "CD33")
+
+
+```
+
+```{r, include = F, eval = F}
+# ----- prerequisites ----------------------------------------------------------
+library(Seurat)
+library(scCustomize)
+library(Matrix)
+library(rustytools)     # your package (load_all or install)
+
+library(magrittr)
+
+seu <- readRDS("~/Fred Hutch Cancer Center/Furlan_Lab - General/experiments/patient_marrows/DB1/cds/221022_DB1_seu_5p_with_cell_labels_SNF.RDS")
+seu$sb <- seu$geno %in% "0" & seu$seurat_clusters %in% c("0", "1", "2", "3", "4", "11")
+#DimPlot(seu, group.by = "sb")
+
+seu <- seu[,seu$sb]
+seu <- NormalizeData(seu, verbose = F) %>% ScaleData(verbose = F) %>% FindVariableFeatures(verbose = F) %>% RunPCA(npcs = 100, verbose = F)
+ElbowPlot(seu, ndims = 100)
+seu <- FindNeighbors(seu, dims = 1:35, verbose = F) %>% FindClusters(verbose = F) %>% RunUMAP(dims = 1:35, n.epochs = 500, verbose = F)
+DimPlot(seu)
+
+# seu <- seu[,sample(1:dim(seu)[2], 100)]
+# seu <- NormalizeData(seu) %>% ScaleData() %>% FindVariableFeatures(nfeatures = 100) %>% RunPCA(npcs = 10)
+# ElbowPlot(seu, ndims = 10)
+# seu <- FindNeighbors(seu, dims = 1:7) %>% FindClusters() %>% RunUMAP(dims = 1:7, n.epochs = 500)
+# DimPlot(seu)
+
+
+
+P <- seu@graphs$RNA_snn              # dgCMatrix, symmetric but NOT row-sum=1 yet
+if (is.null(P))
+  stop("Run FindNeighbors() first or set graph.name correctly")
+
+row_sums <- Matrix::rowSums(P)
+P <- Matrix::Diagonal(x = 1 / pmax(row_sums, 1e-12)) %*% P   # D^{-1} · A
+# P is now cells × cells, row-stochastic, still dgCMatrix
+
+# ----------------------------------------------------------------------------- #
+# 2)   Extract expression matrix (genes × cells)
+# ----------------------------------------------------------------------------- #
+# X <- seu@assays$RNA@data[VariableFeatures(seu), ]  # this is dgCMatrix, genes × cells
+X <- seu@assays$RNA@data
+dim(X)
+
+test_conversion(X)
+
+
+# ----------------------------------------------------------------------------- #
+# 3)   Diffuse  (t = 3, chunk = 512 genes at a time)
+# ----------------------------------------------------------------------------- #
+system.time({
+  comps  <- diffuse_expr_r(P, t(X), t = 3L, chunk = 512L)  # now returns list
+  X_imp  <- t(dgC_from_components(comps))
+})
+
+rownames(X_imp) <- rownames(seu[["RNA"]]@data)
+colnames(X_imp) <- colnames(seu[["RNA"]]@data)
+
+## 1.1  density (how many non-zeros)
+nnz      <- function(M) length(M@x)
+cbind(
+  nnz = c(X = nnz(X), X_imp = nnz(X_imp)),
+  density = c(nnz(X), nnz(X_imp)) / prod(dim(X))
+)
+
+lib_size_raw <- Matrix::colSums(X)
+lib_size_imp <- Matrix::colSums(X_imp)
+
+plot(lib_size_raw, lib_size_imp,
+     xlab = "raw column sum", ylab = "imputed column sum", pch = 20)
+
+rs <- Matrix::rowSums(P)
+summary(rs) 
+
+
+plot(Matrix::rowSums(X), Matrix::rowSums(X_imp),
+     xlab = "raw gene sum", ylab = "imputed gene sum", pch = 20)
+abline(0,1,col=2)
+
+library(future.apply)
+plan(multisession, workers = parallel::detectCores())
+
+chunks <- split(idx, ceiling(seq_along(idx) / 500))    # 500 genes per task
+
+cors <- unlist(future_lapply(chunks, function(rows) {
+  vapply(rows, \(g) cor(drop(X[g, ]), drop(X_imp[g, ])), 0)
+}))
+summary(cors)
+
+
+plot(
+  as.numeric(X["TMSB4X", ]), as.numeric(X_imp["TMSB4X", ]),
+  pch = 20, xlab = "raw", ylab = "imputed"
+)
+
+
+
+# On 6 k cells × ~2 k genes expect a few seconds on 8 cores.
+
+# ----------------------------------------------------------------------------- #
+# 4)   Store the imputed matrix back into Seurat
+# ----------------------------------------------------------------------------- #
+
+seum <- seu
+seum[["RNA"]]@data <- X_imp
+
+FeaturePlot_scCustom(seum, features = "CD33")
+FeaturePlot_scCustom(seu, features = "CD33")
+```
+
+
+## Appendix
+```{r Appendix}
+sessionInfo()
+```

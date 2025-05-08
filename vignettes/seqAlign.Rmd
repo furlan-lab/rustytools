@@ -1,0 +1,86 @@
+---
+title: "How to perform sequence alignment"
+output: html_document
+date: "2024-06-04"
+always_allow_html: true
+editor_options: 
+  chunk_output_type: console
+---
+
+## Installing Rust
+
+First you need to have an updated Rust installation. Go to this [site](https://www.rust-lang.org/tools/install) to learn how to install Rust.
+
+
+## Installing rustytools
+
+You will need to have the devtools package installed...
+
+```{r, eval=F}
+devtools::install_github("furlan-lab/rustytools", force=T)
+```
+
+
+## Running a tool to perform sequence alignment
+
+Loading libraries
+```{r, dpi=300, fig.height=4, fig.width = 6}
+rm(list=ls())
+suppressPackageStartupMessages({
+  library(rustytools)
+})
+
+```
+
+## Fast pairwise alignment
+
+Using rust we have implemented an excellent pairwise alignment algorith from the rust bio package written by Johannes Köster, Vadim Nazarov, and Patrick Marks.  We can quickly perform a pairwise alignment from all the VDJ-B sequences from 10X with the adaptive clonoseq values obtained from a patient with suspected relapse of B-ALL.  The align function allows use to score the sequence similarity.  Using this approach we can easily identify the leukemic clones in the UMAP embedding.
+
+We also see that these cells do not express CDKN2A unlike the healthy lymphod precursors, consistent with the clinical results.
+
+```{r}
+library(Seurat)
+library(scCustomize)
+seu<-readRDS("/Users/sfurlan/Library/CloudStorage/OneDrive-SharedLibraries-FredHutchinsonCancerCenter/Furlan_Lab - General/experiments/patient_marrows/ALL_5336/cds/240416_cds.RDS")
+if(grepl("^gizmo", Sys.info()["nodename"])){
+  ROOT_DIR2<-"/fh/fast/furlan_s/grp/data/ddata/BM_data"
+} else {
+  ROOT_DIR2<-"/Users/sfurlan/Library/CloudStorage/OneDrive-SharedLibraries-FredHutchinsonCancerCenter/Furlan_Lab - General/datasets/Healthy_BM_greenleaf"
+}
+
+#reference dataset
+seur<-readRDS(file.path(ROOT_DIR2, "230329_rnaAugmented_seurat.RDS"))
+
+
+DimPlot(seu, group.by = "vmR_pred", cols = seur@misc$colors)
+#DimPlot(seu, group.by = "seurat_clusters", cols= as.character(pals::polychrome()))
+
+seu$leuk_cdr3_nt<-NA
+seu$leuk_cdr3_nt[seu$seurat_clusters %in% c(11,13)]<-seu$cdr3_nt[seu$seurat_clusters %in% c(11,13)]
+DimPlot(seu, group.by = "leuk_cdr3_nt")+NoLegend()
+putative<-names(table(seu$leuk_cdr3_nt)[order(-table(seu$leuk_cdr3_nt))])
+
+#from adaptive clonoseq
+cloneC<-"CAGGAACACCTCCATAAGCACAGCCTACATGGAGCTGAGCAGCCTGAGATCTGAGGACACGGCCGTGTATTACTGTGCGAGAGGCCTAACCCACACCCACCCCCTACTTATTGTAGTAGTACCAGCTGCTATGACTACTGGGGCCAGGGAACC"
+cloneB<-"CGCGGACAAATCCACGAGCACAGCCTACATGGAGCTGAGCAGCCTGAGATCTGAGGACACGGCCGTGTATTACTGTGCGCGGCGGACTCCGTATTACTATGGTTCGGGGAGTTATACTACTACGGTATGGACGTCTGGGGCCAAGGGACC"
+cloneD <- "GATGTTGGGGTTTATTACTGCATGCAAGGTACACACTGGCCCAACCTAGTGGCAGCCCAGGG"
+cloneE <- "CTGATTATTACTGTGAGACCGGGACCAAGC"
+
+
+seu$cloneC_score<-sapply(seu$cdr3_nt, function(seq) align(seq, cloneC, atype = "local", verbose = F))
+seu$cloneB_score<-sapply(seu$cdr3_nt, function(seq) align(seq, cloneB, atype = "local", verbose = F))
+seu$cloneD_score<-sapply(seu$cdr3_nt, function(seq) align(seq, cloneD, atype = "local", verbose = F))
+seu$cloneE_score<-sapply(seu$cdr3_nt, function(seq) align(seq, cloneE, atype = "local", verbose = F))
+
+FeaturePlot(seu, features = c("cloneB_score", "cloneC_score", "cloneD_score", "cloneE_score"), order = T, keep.scale="all", cols = c("grey90", "red"), min.cutoff = "q20")
+
+Biostrings::pairwiseAlignment(putative[1], cloneC, type="global-local")
+Biostrings::pairwiseAlignment(putative[2], cloneB, type="global-local")
+
+FeaturePlot_scCustom(seu, features = "CDKN2A")
+```
+
+## Appendix
+```{r Appendix}
+sessionInfo()
+```

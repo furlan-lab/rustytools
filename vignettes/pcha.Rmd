@@ -1,0 +1,278 @@
+---
+title: "PCHA"
+output: html_document
+date: "2025-05-06"
+always_allow_html: true
+editor_options: 
+  chunk_output_type: console
+---
+
+## Installing Rust
+
+First you need to have an updated Rust installation. Go to this [site](https://www.rust-lang.org/tools/install) to learn how to install Rust.
+
+
+## Installing rustytools
+
+You will need to have the devtools package installed...
+
+```{r, eval=F}
+devtools::install_github("furlan-lab/rustytools", force=T)
+```
+
+
+## Overview of PCHA implemented in Rust
+
+
+### 1.  Problem set-up
+
+| symbol                       | shape               | meaning                           |        |                              |
+| ---------------------------- | ------------------- | --------------------------------- | ------ | ---------------------------- |
+| $X\in\mathbb{R}^{p\times n}$ | variables × samples | raw data                          |        |                              |
+| $I\subseteq\{1,\dots,n\}$    | (                   | I                                 | =n\_I) | dictionary columns (“atoms”) |
+| $U\subseteq\{1,\dots,n\}$    | (                   | U                                 | =n\_U) | columns to be approximated   |
+| $k$                          | —                   | number of archetypes (components) |        |                              |
+
+We split $X = [\,X_I\;X_{\,\bar I}\,]$ and seek
+
+$$
+\boxed{\;X_U\;\approx\;\underbrace{X_I}_{p\times n_I}\;
+        \underbrace{C}_{n_I\times k}\;
+        \underbrace{S}_{k\times n_U}\;}
+$$
+
+with the **convex-hull constraints**
+
+$$
+C\ge 0,\quad S\ge 0,\qquad 
+\|S_{:,j}\|_{1}=1,\quad 
+\|C_{:,t}\|_{1}\approx 1\;(\pm\delta).
+$$
+
+The **sum-of-squares error** (SSE) to minimise is
+
+$$
+\mathrm{SSE}(C,S)=
+\|X_U-X_I C S\|_F^{2}.
+\tag{1}
+$$
+
+---
+
+### 2.  Algebra that drives the code
+
+1. **Expand (1)**
+
+   $$
+   \begin{aligned}
+   \|A-B\|_F^{2}
+     &=\operatorname{tr}\bigl((A-B)^\top(A-B)\bigr) \\
+     &=\|X_U\|_F^{2}
+       -2\,\operatorname{tr}\!\bigl(S^\top C^\top X_I^\top X_U\bigr)
+       +\operatorname{tr}\!\bigl(S^\top C^\top X_I^\top X_I C S\bigr).
+   \end{aligned}
+   $$
+
+   Two cached Gram matrices therefore appear everywhere in the Rust code
+
+   $$
+   G := X_I^\top X_U,\qquad
+   H := X_I^\top X_I.
+   $$
+
+2. **Gradients**
+
+   $$
+   \nabla_S\mathrm{SSE} = 
+   (C^\top H C)\,S - C^\top G,
+   \quad
+   \nabla_C\mathrm{SSE} = 
+   H\,C\,\bigl(SS^\top\bigr)-G S^\top .
+   $$
+
+   (These two lines are the heart of `s_update` and `c_update`.)
+
+3. **Projected–gradient step**
+
+   * **Take a gradient step:**
+     $Z\leftarrow Y - \mu\,\nabla_Y$  for $Y\in\{C,S\}$.
+
+   * **Project back to the feasible set.**
+     Each column is sent onto the probability simplex
+
+     $$
+       \Delta^{m-1}:=\Bigl\{\,z\in\mathbb{R}^m_{\ge 0}:
+            \langle\mathbf 1,z\rangle=1\Bigr\},
+     $$
+
+     using the Wang–Carreira-Perpiñán algorithm (O(m log m)), implemented
+     in `project_simplex`.
+
+   * **Armijo-type line-search**
+     If the new SSE is not smaller, shrink $\mu:=\mu/2$;
+     else accept and enlarge $\mu:=1.2\,\mu$.
+     (see the inner `while !stop` loops).
+
+4. **Optional “α-relaxation’’**
+   To let each archetype deviate slightly from exact $ \ell_1\! =\!1$,
+   a per-column scalar $\alpha_t\in[1-\delta,\,1+\delta]$ is fitted
+   (second part of `c_update`).
+   In formulas: minimise w\.r.t. $\alpha$
+
+   $$
+     \|\,X_U - X_I\,(C\operatorname{diag}\alpha)\,S\|_F^{2}.
+   $$
+
+---
+
+### 3.  Initialisation
+
+* **Furthest-Sum (FS)** finds $k$ columns of $X_I$ that are mutually
+  far apart in Euclidean distance:
+
+  ```
+  choose seed  i₁
+  repeat
+        pick   i_{t+1} := argmax_j Σ_{s≤t} ‖x_{i_s}-x_j‖
+  ```
+
+  FS provides an indicator matrix $C^{(0)}$ with **exact** simplex
+  columns (one “1” each).
+
+* **Dirichlet-type random $S^{(0)}$**
+  Each column is drawn i.i.d.\ from $\operatorname{Dirichlet}(\mathbf 1)$
+  ⇒ uniform over the simplex.
+
+---
+
+### 4.  Stopping rule
+
+Iterate until
+
+$$
+\frac{|\mathrm{SSE}^{(t-1)}-\mathrm{SSE}^{(t)}|}
+           {\mathrm{SSE}^{(t)}}
+     <\text{tol} \quad\text{or}\quad
+     \frac{\mathrm{SSE}^{(t)}}{\|X_U\|_F^{2}}
+     > 1-\varepsilon\;(\text{≈ 99.99 % var. expl.})
+$$
+
+or the iteration cap is hit (default 750).
+
+---
+
+### 5.  Output
+
+* $C$ and $S$ re-ordered by column usage
+  $u_t=\sum_j S_{tj}$ (desc).
+* Archetypes $XC = X_I C$.
+* Final SSE and variance explained
+  $\mathrm{VarExpl}=1-\mathrm{SSE}/\|X_U\|_F^{2}$.
+
+---
+
+**Big picture**
+You learned a *convex-hull* factorisation that sits halfway between
+k-means (hard memberships, no convexity) and NMF/PCA (basis vectors not
+constrained to the data hull).
+
+All optimisation boils down to “gradient + project” on simplexes, with
+a few cleverly cached Gram matrices to keep the numeric cost low.
+
+
+## Create a data set with a known archetypal structure
+
+```{r}
+library(rustytools)
+### Toy data with a known archetypal structure
+set.seed(42)
+p  <- 60            # genes
+n  <- 300           # cells
+k0 <- 5             # ground-truth archetypes
+
+# 1. ground-truth archetype matrix A (p × k0)
+A <- matrix(rexp(p * k0, 1), p, k0)
+# 2. sample coefficients S on the simplex
+alpha <- matrix(rexp(k0 * n, 1), k0, n)
+S     <- sweep(alpha, 2, colSums(alpha), "/")
+# 3. generate data with small noise
+X <- A %*% S + matrix(rgamma(p * n, shape = 1, rate = 50), p, n)
+
+```
+
+# Finding optimal number of archetypes
+
+First we set a number of k to iterate through.  Using the future library we can perform pcha on each k in parallel.  We normalize the sum squared error, then use the `find_knee_pt` function to find the optimal number of archetypes which is our ground truth archetype from above
+
+```{r}
+
+ks <- 1:10
+sse <- sapply(ks, function(k) pcha(X, k)$sse)
+norm_sse  <- sse / sum(X * X)                           
+kp   <- find_knee_pt(norm_sse, ks, make_plot = TRUE)
+
+cat("Optimal number of archetypes =", kp$knee_x, "\n")
+```
+
+## What does this look like in single cell RNA sequencing data
+
+First subset out the tumor
+```{r}
+library(Seurat)
+library(magrittr)
+seu <- readRDS("~/Fred Hutch Cancer Center/Furlan_Lab - General/experiments/patient_marrows/annon/AML101/aml101.cds")
+DimPlot(seu, group.by = "seurat_clusters")
+DimPlot(seu, group.by = "geno")
+
+seu$sb <- seu$geno %in% "0" & seu$seurat_clusters %in% c("0", "1", "2", "3", "4", "11")
+#DimPlot(seu, group.by = "sb")
+
+seu <- seu[,seu$sb]
+seu <- NormalizeData(seu, verbose = F) %>% ScaleData(verbose = F) %>% FindVariableFeatures(verbose = F) %>% RunPCA(npcs = 100, verbose = F)
+ElbowPlot(seu, ndims = 100)
+seu <- FindNeighbors(seu, dims = 1:35, verbose = F) %>% FindClusters(verbose = F) %>% RunUMAP(dims = 1:35, n.epochs = 500, verbose = F)
+DimPlot(seu)
+
+seu <- seurat_magic(seu, alpha = 1)
+
+vf <- VariableFeatures(seu)
+X <- as.matrix(seu@assays$MAGIC@data[vf, ])
+
+
+ks <- 1:20
+sse <- sapply(ks, function(k) {
+  message("processing k: " , k)
+  return(pcha(X, k)$sse)
+  })
+norm_sse  <- sse / sum(X * X)                           
+kp   <- find_knee_pt(norm_sse, ks, make_plot = TRUE)
+
+cat("Optimal number of archetypes =", kp$knee_x, "\n")
+
+noc <- kp$knee_x
+res <- pcha(X, noc = noc) 
+weights_df <- as.data.frame(t(res$S))     # cells × k
+colnames(weights_df) <- paste0("arch", seq_len(noc))
+
+# a single label: archetype with the largest weight
+seu$max_arch <- factor(
+  apply(weights_df, 1L, which.max),
+  levels = seq_len(noc),
+  labels = paste0("Arch", seq_len(noc))
+)
+
+DimPlot(seu, group.by = "max_arch")
+
+
+viewmastR::confusion_matrix(gt = seu$max_arch, pred = seu$seurat_clusters)
+
+
+```
+
+
+
+
+## Appendix
+```{r Appendix}
+sessionInfo()
+```

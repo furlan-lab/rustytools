@@ -1,0 +1,109 @@
+---
+title: "How to extract coordinates and sequence from a fasta file"
+output: html_document
+date: "2024-06-04"
+always_allow_html: true
+editor_options: 
+  chunk_output_type: console
+---
+
+## Installing Rust
+
+First you need to have an updated Rust installation. Go to this [site](https://www.rust-lang.org/tools/install) to learn how to install Rust.
+
+
+## Installing rustytools
+
+You will need to have the devtools package installed...
+
+```{r, eval=F}
+devtools::install_github("furlan-lab/rustytools", force=T)
+```
+
+
+## Running a tool to extract consensus sequence data
+
+Loading libraries
+```{r, dpi=300, fig.height=4, fig.width = 6}
+rm(list=ls())
+suppressPackageStartupMessages({
+  library(rustytools)
+})
+
+```
+
+## Get consensus from fasta
+
+This function will process a fasta file that has been processed using a tool such as samtools consensus.  The function will find all regions (subsequences) of the fasta that have sequence (A, C, T, G) and output a granges object containing the features and their sequences.  It is invoked as follows:
+
+```{r}
+root<-file.path(.libPaths()[1], "rustytools/extdata")
+tfasta=file.path(root, "test.fa")
+results<-get_consensus(tfasta, cores=1, genome="toy")
+results[[1]]
+```
+
+In the above toy example we use the cores argument set to 1.  get_consensus works by splitting work for each contig (chromosome) across cores.  In the above example, it doesn't make sense to split the contigs across cores because the contig has about 500-600 bases.  When running this on real fasta sequence from a large genome, one would want to leverage parallel processing and process each contig using a core.  In this next block we show how to run get_consensus on a big fasta.
+
+```{r}
+fasta="~/Desktop/Junk/GENDX_HLA_Mix1_S1_L001_t1000.fa"
+# results<-get_consensus(fasta, cores=16, genome="hg38")
+```
+
+Before running a full fasta on all contigs, you can check the first n contigs of a full sized fasta using the argument test_with_n. Note that the full fasta will be read into memory to ensure appropriate seqinfo data
+```{r, eval=F}
+results<-get_consensus(fasta, cores=16, genome="hg38", test_with_n = 1)
+```
+
+## Merge
+
+```{r}
+library(GenomicRanges)
+reduced_results<-reduce(results[[1]], min.gapwidth = 2L)
+
+```
+
+
+## Annotation 1
+```{r}
+library(TxDb.Hsapiens.UCSC.hg38.knownGene)
+library(VariantAnnotation)
+txdb_hg38 <- TxDb.Hsapiens.UCSC.hg38.knownGene
+si<-seqinfo(txdb_hg38)
+reduced_results@seqinfo<-GenomeInfoDb::Seqinfo(seqnames = si@seqnames[1:22], seqlengths = si@seqlengths[1:22], isCircular = rep(NA, 22), genome = "hg38")
+annotated_results <- locateVariants(reduced_results, txdb_hg38, AllVariants())
+table(annotated_results$LOCATION)
+annotated_results[annotated_results$LOCATION=="coding"]
+```
+
+
+## Annotation 2
+```{r}
+# devtools::install_github("Bioconductor/UCSC.utils")
+# devtools::install_github("Bioconductor/GenomeInfoDb")
+# devtools::install_github("grimbough/biomaRt")
+# devtools::install_github("Bioconductor/txdbmaker")
+# BiocManager::install("EnsDb.Hsapiens.v86")
+
+library(txdbmaker)
+gtf_file<-"/Users/sfurlan/Library/CloudStorage/OneDrive-SharedLibraries-FredHutchinsonCancerCenter/Furlan_Lab - General/resources/refs/gencode.v46.annotation.gtf.gz"
+txdb <- makeTxDbFromGFF(gtf_file, format="gtf", dbxrefTag = "gene_name")
+annotated_results2 <- locateVariants(reduced_results, txdb, AllVariants())
+annotated_results2
+```
+
+### Annotation 3
+```{r}
+library(ChIPpeakAnno)
+library(ensembldb)
+library(EnsDb.Hsapiens.v86)
+annoGR <- toGRanges(EnsDb.Hsapiens.v86)
+seqlevelsStyle(reduced_results) <- seqlevelsStyle(annoGR)
+annotated_results3<-annoPeaks(reduced_results, annoGR, bindingType = "fullRange")
+annotated_results3[grepl("^HLA", annotated_results3$gene_name)]$gene_name
+```
+
+## Appendix
+```{r Appendix}
+sessionInfo()
+```

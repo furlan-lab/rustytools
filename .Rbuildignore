@@ -1,0 +1,4 @@
+^rustytools\.Rproj$
+^\.Rproj\.user$
+^src/\.cargo$
+debug.R

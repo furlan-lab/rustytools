@@ -1,0 +1,19 @@
+[package]
+name = 'rustytools'
+publish = false
+version = '0.0.2'
+edition = '2021'
+
+[lib]
+crate-type = [ 'staticlib' ]
+name = 'rustytools'
+
+[dependencies]
+extendr-api = '*'
+bio-types = ">=0.12"
+ndarray        = { version = "0.16", features = ["blas"] }
+ndarray-rand   = "0.15"
+rand           = "0.8"
+rayon = "*"
+sprs = "*"
+ndarray-linalg = { version = "0.15", features = ["openblas-static"] } 
