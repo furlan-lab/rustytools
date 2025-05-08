@@ -1,42 +1,22 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://furlan-lab.github.io/rustytools/404.html</loc>
-  </url>
-  <url>
-    <loc>https://furlan-lab.github.io/rustytools/LICENSE.html</loc>
-  </url>
-  <url>
-    <loc>https://furlan-lab.github.io/rustytools/articles/index.html</loc>
-  </url>
-  <url>
-    <loc>https://furlan-lab.github.io/rustytools/articles/pcha.html</loc>
-  </url>
-  <url>
-    <loc>https://furlan-lab.github.io/rustytools/articles/seqAlign.html</loc>
-  </url>
-  <url>
-    <loc>https://furlan-lab.github.io/rustytools/authors.html</loc>
-  </url>
-  <url>
-    <loc>https://furlan-lab.github.io/rustytools/index.html</loc>
-  </url>
-  <url>
-    <loc>https://furlan-lab.github.io/rustytools/news/index.html</loc>
-  </url>
-  <url>
-    <loc>https://furlan-lab.github.io/rustytools/reference/align.html</loc>
-  </url>
-  <url>
-    <loc>https://furlan-lab.github.io/rustytools/reference/get_consensus.html</loc>
-  </url>
-  <url>
-    <loc>https://furlan-lab.github.io/rustytools/reference/index.html</loc>
-  </url>
-  <url>
-    <loc>https://furlan-lab.github.io/rustytools/reference/pcha.html</loc>
-  </url>
-  <url>
-    <loc>https://furlan-lab.github.io/rustytools/reference/rustytools-package.html</loc>
-  </url>
+<urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
+<url><loc>https://furlan-lab.github.io/rustytools/404.html</loc></url>
+<url><loc>https://furlan-lab.github.io/rustytools/LICENSE.html</loc></url>
+<url><loc>https://furlan-lab.github.io/rustytools/articles/index.html</loc></url>
+<url><loc>https://furlan-lab.github.io/rustytools/articles/magic.html</loc></url>
+<url><loc>https://furlan-lab.github.io/rustytools/articles/pcha.html</loc></url>
+<url><loc>https://furlan-lab.github.io/rustytools/articles/seqAlign.html</loc></url>
+<url><loc>https://furlan-lab.github.io/rustytools/authors.html</loc></url>
+<url><loc>https://furlan-lab.github.io/rustytools/index.html</loc></url>
+<url><loc>https://furlan-lab.github.io/rustytools/news/index.html</loc></url>
+<url><loc>https://furlan-lab.github.io/rustytools/reference/align.html</loc></url>
+<url><loc>https://furlan-lab.github.io/rustytools/reference/dgC_from_components.html</loc></url>
+<url><loc>https://furlan-lab.github.io/rustytools/reference/dot-linerr.html</loc></url>
+<url><loc>https://furlan-lab.github.io/rustytools/reference/find_knee_pt.html</loc></url>
+<url><loc>https://furlan-lab.github.io/rustytools/reference/get_consensus.html</loc></url>
+<url><loc>https://furlan-lab.github.io/rustytools/reference/index.html</loc></url>
+<url><loc>https://furlan-lab.github.io/rustytools/reference/pcha.html</loc></url>
+<url><loc>https://furlan-lab.github.io/rustytools/reference/rustytools-package.html</loc></url>
+<url><loc>https://furlan-lab.github.io/rustytools/reference/seg_err.html</loc></url>
+<url><loc>https://furlan-lab.github.io/rustytools/reference/seurat_magic.html</loc></url>
 </urlset>
+
