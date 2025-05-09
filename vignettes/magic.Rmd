@@ -198,32 +198,32 @@ $$
 
 ## How to run MAGIC in R/Rust
 
-First we take some data, subset to the tumor cells that express modest levels of CD33.  Lets see how they look after Magic.
+First we take some data, subset to the tumor cells that express modest levels of CD33.
 ```{r}
 suppressPackageStartupMessages({
   library(Seurat)
   library(scCustomize)
-  library(rustytools)   # your package exposing diffuse_expr_r()
+  library(rustytools)
   library(magrittr)
 })
 
 
 seu <- readRDS("~/Fred Hutch Cancer Center/Furlan_Lab - General/experiments/patient_marrows/annon/AML101/aml101.cds")
 seu$sb <- seu$geno %in% "0" & seu$seurat_clusters %in% c("0", "1", "2", "3", "4", "11")
-#DimPlot(seu, group.by = "sb")
-
 seu <- seu[,seu$sb]
 seu <- NormalizeData(seu, verbose = F) %>% ScaleData(verbose = F) %>% FindVariableFeatures(verbose = F) %>% RunPCA(npcs = 100, verbose = F)
 ElbowPlot(seu, ndims = 100)
 seu <- FindNeighbors(seu, dims = 1:35, verbose = F) %>% FindClusters(verbose = F) %>% RunUMAP(dims = 1:35, n.epochs = 500, verbose = F)
 DimPlot(seu)
-
-
-seu <- seurat_magic(seu, alpha = 1)
-
 DefaultAssay(seu) <- "RNA"
 FeaturePlot_scCustom(seu, "CD33")
+```
 
+
+Now let's see how they look after some magic.
+
+```{r}
+seu <- seurat_magic(seu, alpha = 1)
 DefaultAssay(seu) <- "MAGIC"
 FeaturePlot_scCustom(seu, "CD33")
 

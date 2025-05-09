@@ -14,7 +14,6 @@ This vignette demonstrates how to extract contiguous consensus sequence blocks f
 This is particularly useful for processing FASTA files derived from consensus calling pipelines (e.g., `samtools consensus`) and for downstream variant or feature annotation.
 
 ```{r, eval=F}
-# install.packages("devtools")
 devtools::install_github("furlan-lab/rustytools", force = TRUE)
 ```
 
@@ -53,7 +52,6 @@ For real genomes, such as those from HLA typing or clinical samples:
 
 ```{r, eval=F}
 fasta <- "~/Desktop/Junk/GENDX_HLA_Mix1_S1_L001_t1000.fa"
-#results <- get_consensus(fasta, cores = 16, genome = "hg38")
 ```
 
 To test on only the **first few contigs** before running a full genome:

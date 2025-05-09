@@ -39,11 +39,11 @@ Here is an example aligning a query sequence to a longer reference:
 ```{r}
 library(rustytools)
 
-query <- charToRaw("ACCGTGGAT")
-reference <- charToRaw("AAAAACCGTTGAT")
+query <- "ACCGTGGAT"
+reference <- "AAAAACCGTTGAT"
 
 # Perform semiglobal alignment
-score <- align(query, reference, atype = "semiglobal")
+score <- align(query, reference, atype = "semi-global", verbose = F)
 score
 ```
 
@@ -59,7 +59,7 @@ This returns an alignment score that considers:
 
 Custom alignments allow full specification of prefix/suffix penalties. Example:
 
-```{r}
+```{r,eval = F}
 score <- align(
   query,
   reference,
@@ -98,11 +98,11 @@ The alignment engine in `rustytools` is highly flexible and efficient. It is par
 `rustytools` includes additional fast backends for:
 
 * **FASTA reading** – random access to large genome files
-  See the [Fasta vignette](articles/getConsensus.html)
+  See the [Fasta vignette](getConsensus.html)
 * **MAGIC** – imputation of scRNA-seq using diffusion maps
-  See the [MAGIC vignette](articles/magic.html)
+  See the [MAGIC vignette](magic.html)
 * **PCHA** – archetypal decomposition of matrices
-  See the [PCHA vignette](articles/pcha.html)
+  See the [PCHA vignette](pcha.html)
 
 Each tool is designed for high performance, especially on large-scale single-cell or genome-wide data.
 

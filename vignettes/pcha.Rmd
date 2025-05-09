@@ -210,7 +210,6 @@ ks <- 1:10
 sse <- sapply(ks, function(k) pcha(X, k)$sse)
 norm_sse  <- sse / sum(X * X)                           
 kp   <- find_knee_pt(norm_sse, ks, make_plot = TRUE)
-
 cat("Optimal number of archetypes =", kp$knee_x, "\n")
 ```
 
@@ -222,13 +221,11 @@ library(Seurat)
 library(ggplot2)
 library(scCustomize)
 library(magrittr)
+
 seu <- readRDS("~/Fred Hutch Cancer Center/Furlan_Lab - General/experiments/patient_marrows/annon/AML101/aml101.cds")
 DimPlot(seu, group.by = "seurat_clusters")
 DimPlot(seu, group.by = "geno")
-
 seu$sb <- seu$geno %in% "0" & seu$seurat_clusters %in% c("0", "1", "2", "3", "4", "11")
-#DimPlot(seu, group.by = "sb")
-
 seu <- seu[,seu$sb]
 seu <- NormalizeData(seu, verbose = F) %>% ScaleData(verbose = F) %>% FindVariableFeatures(verbose = F) %>% RunPCA(npcs = 100, verbose = F)
 ElbowPlot(seu, ndims = 100)
