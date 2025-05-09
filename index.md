@@ -53,8 +53,8 @@ print(res)
 ## Vignettes
 
 * 📘 [Getting Started](articles/introduction.html)
-* 🔁 [Repeat Finding](articles/seqAlign.html)
-* 🧬 [Indexed FASTA Files](articles/getConsensus.html)
+* 🔁 [Pairwise Alignment](articles/seqAlign.html)
+* 🧬 [FASTA Files](articles/getConsensus.html)
 * 🧠 [MAGIC Imputation](articles/magic.html)
 * 🧱 [PCHA for Archetype Analysis](articles/pcha.html)
 

@@ -52,15 +52,15 @@ print(res)
 
 ## Vignettes
 
-* 📘 [Getting Started](articles/introduction.html)
-* 🔁 [Repeat Finding](articles/seqAlign.html)
-* 🧬 [Indexed FASTA Files](articles/getConsensus.html)
-* 🧠 [MAGIC Imputation](articles/magic.html)
-* 🧱 [PCHA for Archetype Analysis](articles/pcha.html)
+* 📘 [Getting Started](https://furlan-lab.github.io/rustytools/articles/introduction.html)
+* 🔁 [Pairwise Alignment](https://furlan-lab.github.io/rustytools/articles/seqAlign.html)
+* 🧬 [FASTA Files](https://furlan-lab.github.io/rustytools/articles/getConsensus.html)
+* 🧠 [MAGIC Imputation](https://furlan-lab.github.io/rustytools/articles/magic.html)
+* 🧱 [PCHA for Archetype Analysis](https://furlan-lab.github.io/rustytools/articles/pcha.html)
 
 ## Reference
 
-See the [function reference](reference/index.html) for full documentation.
+See the [function reference](https://furlan-lab.github.io/rustytools/reference/index.html) for full documentation.
 
 Developed by the [Furlan Lab](https://furlan-lab.github.io/) at Fred Hutchinson Cancer Center
 MIT Licensed
