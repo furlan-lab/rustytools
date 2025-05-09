@@ -291,34 +291,6 @@ $$</span></p>
 <div class="section level3">
 <h3 id="special-cases">Special cases<a class="anchor" aria-label="anchor" href="#special-cases"></a>
 </h3>
-<ul>
-<li><p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\alpha = 0</annotation></semantics></math>:
-<span class="math inline">$X_{\rm imp}(0) = X$</span>. No
-diffusion—returns the raw data unchanged.</p></li>
-<li><p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\alpha = 1</annotation></semantics></math>:
-<span class="math inline">$X_{\rm imp}(1) = P^{\,t}X$</span>. Full MAGIC
-imputation.</p></li>
-<li><p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0</mn><mo>&lt;</mo><mi>α</mi><mo>&lt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">0 &lt; \alpha &lt; 1</annotation></semantics></math>:
-Partial smoothing. Each entry is a convex combination of the raw and
-diffused values.</p></li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="special-cases-1">Special cases<a class="anchor" aria-label="anchor" href="#special-cases-1"></a>
-</h3>
-<ul>
-<li><p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\alpha = 0</annotation></semantics></math>:<br><span class="math inline">$X_{\rm imp}(0) = X$</span>.<br>
-No diffusion—returns the raw data unchanged.</p></li>
-<li><p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\alpha = 1</annotation></semantics></math>:<br><span class="math inline">$X_{\rm imp}(1) = P^{t}\,X$</span>.<br>
-Full MAGIC imputation.</p></li>
-<li><p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0</mn><mo>&lt;</mo><mi>α</mi><mo>&lt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">0 &lt; \alpha &lt; 1</annotation></semantics></math>:<br>
-Partial smoothing. Each entry is a convex combination of the raw and
-diffused values.</p></li>
-</ul>
-</div>
-<div class="section level3">
-<h3 id="special-cases-2">Special cases<a class="anchor" aria-label="anchor" href="#special-cases-2"></a>
-</h3>
 <p><span class="math display">$$
 \begin{aligned}
 \alpha = 0:\quad &amp;X_{\rm imp}(0) = X,\\
@@ -366,6 +338,61 @@ or the underlying graph.</p></li>
 </ul>
 <hr>
 </div>
+</div>
+<div class="section level2">
+<h2 id="how-to-run-magic-in-rrust">How to run MAGIC in R/Rust<a class="anchor" aria-label="anchor" href="#how-to-run-magic-in-rrust"></a>
+</h2>
+<p>First we take some data, subset to the tumor cells that express
+modest levels of CD33. Lets see how they look after Magic.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressPackageStartupMessages</a></span><span class="op">(</span><span class="op">{</span></span>
+<span>  <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://satijalab.org/seurat" class="external-link">Seurat</a></span><span class="op">)</span></span>
+<span>  <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/samuel-marsh/scCustomize" class="external-link">scCustomize</a></span><span class="op">)</span></span>
+<span>  <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://furlan-lab.github.io/rustytools/">rustytools</a></span><span class="op">)</span>   <span class="co"># your package exposing diffuse_expr_r()</span></span>
+<span>  <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://magrittr.tidyverse.org" class="external-link">magrittr</a></span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span>
+<span></span>
+<span></span>
+<span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="st">"~/Fred Hutch Cancer Center/Furlan_Lab - General/experiments/patient_marrows/annon/AML101/aml101.cds"</span><span class="op">)</span></span>
+<span><span class="va">seu</span><span class="op">$</span><span class="va">sb</span> <span class="op">&lt;-</span> <span class="va">seu</span><span class="op">$</span><span class="va">geno</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="st">"0"</span> <span class="op">&amp;</span> <span class="va">seu</span><span class="op">$</span><span class="va">seurat_clusters</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"0"</span>, <span class="st">"1"</span>, <span class="st">"2"</span>, <span class="st">"3"</span>, <span class="st">"4"</span>, <span class="st">"11"</span><span class="op">)</span></span>
+<span><span class="co">#DimPlot(seu, group.by = "sb")</span></span>
+<span></span>
+<span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="va">seu</span><span class="op">[</span>,<span class="va">seu</span><span class="op">$</span><span class="va">sb</span><span class="op">]</span></span>
+<span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/NormalizeData.html" class="external-link">NormalizeData</a></span><span class="op">(</span><span class="va">seu</span>, verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://satijalab.org/seurat/reference/ScaleData.html" class="external-link">ScaleData</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://satijalab.org/seurat/reference/FindVariableFeatures.html" class="external-link">FindVariableFeatures</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://satijalab.org/seurat/reference/RunPCA.html" class="external-link">RunPCA</a></span><span class="op">(</span>npcs <span class="op">=</span> <span class="fl">100</span>, verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://satijalab.org/seurat/reference/ElbowPlot.html" class="external-link">ElbowPlot</a></span><span class="op">(</span><span class="va">seu</span>, ndims <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></code></pre></div>
+<p><img src="magic_files/figure-html/unnamed-chunk-3-1.png" width="100%"></p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/FindNeighbors.html" class="external-link">FindNeighbors</a></span><span class="op">(</span><span class="va">seu</span>, dims <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">35</span>, verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://satijalab.org/seurat/reference/FindClusters.html" class="external-link">FindClusters</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://satijalab.org/seurat/reference/RunUMAP.html" class="external-link">RunUMAP</a></span><span class="op">(</span>dims <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">35</span>, n.epochs <span class="op">=</span> <span class="fl">500</span>, verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://satijalab.org/seurat/reference/DimPlot.html" class="external-link">DimPlot</a></span><span class="op">(</span><span class="va">seu</span><span class="op">)</span></span></code></pre></div>
+<p><img src="magic_files/figure-html/unnamed-chunk-3-2.png" width="100%"></p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/seurat_magic.html">seurat_magic</a></span><span class="op">(</span><span class="va">seu</span>, alpha <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://satijalab.github.io/seurat-object/reference/DefaultAssay.html" class="external-link">DefaultAssay</a></span><span class="op">(</span><span class="va">seu</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"RNA"</span></span>
+<span><span class="fu"><a href="https://samuel-marsh.github.io/scCustomize/reference/FeaturePlot_scCustom.html" class="external-link">FeaturePlot_scCustom</a></span><span class="op">(</span><span class="va">seu</span>, <span class="st">"CD33"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="magic_files/figure-html/unnamed-chunk-3-3.png" width="100%"></p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://satijalab.github.io/seurat-object/reference/DefaultAssay.html" class="external-link">DefaultAssay</a></span><span class="op">(</span><span class="va">seu</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"MAGIC"</span></span>
+<span><span class="fu"><a href="https://samuel-marsh.github.io/scCustomize/reference/FeaturePlot_scCustom.html" class="external-link">FeaturePlot_scCustom</a></span><span class="op">(</span><span class="va">seu</span>, <span class="st">"CD33"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="magic_files/figure-html/unnamed-chunk-3-4.png" width="100%"></p>
+</div>
+<div class="section level2">
+<h2 id="changing-parameters">Changing parameters<a class="anchor" aria-label="anchor" href="#changing-parameters"></a>
+</h2>
+<p>An alpha of 1 might be too much. We can dial it back with an alpha of
+0.3 and even further by dropping t to 2.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/seurat_magic.html">seurat_magic</a></span><span class="op">(</span><span class="va">seu</span>, alpha <span class="op">=</span> <span class="fl">0.3</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://satijalab.github.io/seurat-object/reference/DefaultAssay.html" class="external-link">DefaultAssay</a></span><span class="op">(</span><span class="va">seu</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"MAGIC"</span></span>
+<span><span class="fu"><a href="https://samuel-marsh.github.io/scCustomize/reference/FeaturePlot_scCustom.html" class="external-link">FeaturePlot_scCustom</a></span><span class="op">(</span><span class="va">seu</span>, <span class="st">"CD33"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="magic_files/figure-html/unnamed-chunk-4-1.png" width="100%"></p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/seurat_magic.html">seurat_magic</a></span><span class="op">(</span><span class="va">seu</span>, alpha <span class="op">=</span> <span class="fl">0.3</span>, t <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://satijalab.github.io/seurat-object/reference/DefaultAssay.html" class="external-link">DefaultAssay</a></span><span class="op">(</span><span class="va">seu</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"MAGIC"</span></span>
+<span><span class="fu"><a href="https://samuel-marsh.github.io/scCustomize/reference/FeaturePlot_scCustom.html" class="external-link">FeaturePlot_scCustom</a></span><span class="op">(</span><span class="va">seu</span>, <span class="st">"CD33"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="magic_files/figure-html/unnamed-chunk-4-2.png" width="100%"></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
