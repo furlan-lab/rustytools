@@ -1,0 +1,117 @@
+---
+title: "Getting Started with rustytools"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with rustytools}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{rmarkdown::render}
+editor_options: 
+  chunk_output_type: console
+---
+
+<!-- Load MathJax for inline math support -->
+
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+# Overview
+
+This vignette introduces the `align()` function from the `rustytools` package, which provides a Rust-backed, high-performance implementation of the Smith-Waterman algorithm. This algorithm supports global, local, semiglobal, and fully custom alignment modes using affine gap penalties.
+
+The underlying engine is a generalized variant of the Smith-Waterman algorithm provided by the `bio-edit` crate, which offers:
+
+* Match/mismatch scoring via custom or predefined functions
+* Affine gap penalties (gap open + gap extension)
+* Flexible boundary behavior via customizable clipping penalties
+
+# Alignment Modes
+
+`rustytools` supports three classic modes and a flexible custom mode:
+
+* **Global alignment**: No clipping is allowed; aligns full length of both sequences.
+* **Local alignment**: Finds the highest-scoring subsequences.
+* **Semiglobal alignment**: Global on one sequence, local on the other (e.g., full query to partial reference).
+* **Custom alignment**: Full control over boundary conditions via clip penalties.
+
+# Example: Semiglobal Alignment
+
+Here is an example aligning a query sequence to a longer reference:
+
+```{r}
+library(rustytools)
+
+query <- charToRaw("ACCGTGGAT")
+reference <- charToRaw("AAAAACCGTTGAT")
+
+# Perform semiglobal alignment
+score <- align(query, reference, atype = "semiglobal")
+score
+```
+
+This returns an alignment score that considers:
+
+* Matches = +1
+* Mismatches = -1
+* Gap open = -5
+* Gap extend = -1
+* No penalty for clipping the start/end of the reference
+
+# Custom Alignment Configuration
+
+Custom alignments allow full specification of prefix/suffix penalties. Example:
+
+```{r}
+score <- align(
+  query,
+  reference,
+  atype = "custom",
+  match_score = 1,
+  mismatch_score = -3,
+  gap_open = -5,
+  gap_extend = -1,
+  xclip_prefix = -10, # allow prefix skips in query
+  xclip_suffix = -9999, # require alignment to end
+  yclip_prefix = 0,     # allow local match to ref
+  yclip_suffix = 0
+)
+score
+```
+
+This setting mimics semiglobal alignment where the query can skip leading bases but must align to the end.
+
+# Use Cases in Genomics
+
+Common applications include:
+
+* Mapping short variable sequences (e.g. CDR3s) to consensus references
+* Comparing VDJ segments to known clone sequences
+* Imputing mutations into reference haplotypes
+
+See the [sequence alignment vignette](articles/seqAlign.html) for an example using single cell RNA seq data in B cell leukemia
+
+# Summary
+
+The alignment engine in `rustytools` is highly flexible and efficient. It is particularly well-suited to bioinformatics tasks involving fuzzy or partial sequence matching. For large datasets or many pairwise alignments, this Rust backend provides a dramatic speed advantage over traditional R-native solutions.
+
+
+# Other Tools
+
+`rustytools` includes additional fast backends for:
+
+* **FASTA reading** – random access to large genome files
+  See the [Fasta vignette](articles/getConsensus.html)
+* **MAGIC** – imputation of scRNA-seq using diffusion maps
+  See the [MAGIC vignette](articles/magic.html)
+* **PCHA** – archetypal decomposition of matrices
+  See the [PCHA vignette](articles/pcha.html)
+
+Each tool is designed for high performance, especially on large-scale single-cell or genome-wide data.
+
+# Support and Citation
+
+Developed by the [Furlan Lab](https://furlan-lab.github.io/) at Fred Hutchinson Cancer Center.
+
+For questions or issues, please file a GitHub issue or contact the maintainers directly.
+
+---
+
+

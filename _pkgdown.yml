@@ -59,10 +59,14 @@ reference:
   - dgC_from_components
   - seurat_magic
 articles:
-# - title: Get Consensus
-#   navbar: Get Consensus
-#   contents:
-#   - getConsensus
+- title: Introduction
+  navbar: Introduction
+  contents:
+  - introduction
+- title: FASTA file
+  navbar: FASTA file
+  contents:
+  - getConsensus
 - title: Pairwise Alignment
   navbar: Pairwise Alignment
   contents:

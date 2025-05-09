@@ -1,5 +1,5 @@
 ---
-title: "How to perform sequence alignment"
+title: "How to Perform Sequence Alignment"
 output: html_document
 date: "2024-06-04"
 always_allow_html: true
@@ -7,80 +7,103 @@ editor_options:
   chunk_output_type: console
 ---
 
-## Installing Rust
+<!-- Load MathJax for inline math rendering -->
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 
-First you need to have an updated Rust installation. Go to this [site](https://www.rust-lang.org/tools/install) to learn how to install Rust.
+# Overview
 
+This vignette demonstrates how to perform **pairwise sequence alignment** using Rust-backed tools in the `rustytools` package. We apply this functionality to align CDR3 nucleotide sequences from single-cell VDJ data and identify leukemic clones in a suspected relapse of B-ALL. This is followed by functional analysis, including expression of **CDKN2A**, to validate biological distinctions.
 
-## Installing rustytools
+# Setup
 
-You will need to have the devtools package installed...
+We begin by loading the necessary libraries.
 
-```{r, eval=F}
-devtools::install_github("furlan-lab/rustytools", force=T)
-```
-
-
-## Running a tool to perform sequence alignment
-
-Loading libraries
-```{r, dpi=300, fig.height=4, fig.width = 6}
-rm(list=ls())
+```{r, message=FALSE, warning=FALSE}
+rm(list = ls())
 suppressPackageStartupMessages({
   library(rustytools)
+  library(Seurat)
+  library(scCustomize)
 })
-
 ```
 
-## Fast pairwise alignment
+# Data Loading
 
-Using rust we have implemented an excellent pairwise alignment algorith from the rust bio package written by Johannes Köster, Vadim Nazarov, and Patrick Marks.  We can quickly perform a pairwise alignment from all the VDJ-B sequences from 10X with the adaptive clonoseq values obtained from a patient with suspected relapse of B-ALL.  The align function allows use to score the sequence similarity.  Using this approach we can easily identify the leukemic clones in the UMAP embedding.
-
-We also see that these cells do not express CDKN2A unlike the healthy lymphod precursors, consistent with the clinical results.
+We load the Seurat object for the patient sample (`seu`) and a reference bone marrow dataset (`seur`). The reference will provide color mappings for visualization.
 
 ```{r}
-library(Seurat)
-library(scCustomize)
-seu<-readRDS("/Users/sfurlan/Library/CloudStorage/OneDrive-SharedLibraries-FredHutchinsonCancerCenter/Furlan_Lab - General/experiments/patient_marrows/ALL_5336/cds/240416_cds.RDS")
-if(grepl("^gizmo", Sys.info()["nodename"])){
-  ROOT_DIR2<-"/fh/fast/furlan_s/grp/data/ddata/BM_data"
+seu <- readRDS("/Users/sfurlan/Library/CloudStorage/OneDrive-SharedLibraries-FredHutchinsonCancerCenter/Furlan_Lab - General/experiments/patient_marrows/ALL_5336/cds/240416_cds.RDS")
+
+if (grepl("^gizmo", Sys.info()["nodename"])) {
+  ROOT_DIR2 <- "/fh/fast/furlan_s/grp/data/ddata/BM_data"
 } else {
-  ROOT_DIR2<-"/Users/sfurlan/Library/CloudStorage/OneDrive-SharedLibraries-FredHutchinsonCancerCenter/Furlan_Lab - General/datasets/Healthy_BM_greenleaf"
+  ROOT_DIR2 <- "/Users/sfurlan/Library/CloudStorage/OneDrive-SharedLibraries-FredHutchinsonCancerCenter/Furlan_Lab - General/datasets/Healthy_BM_greenleaf"
 }
 
-#reference dataset
-seur<-readRDS(file.path(ROOT_DIR2, "230329_rnaAugmented_seurat.RDS"))
+seur <- readRDS(file.path(ROOT_DIR2, "230329_rnaAugmented_seurat.RDS"))
+```
 
+# Visualizing VDJ Predictions
 
+We plot the predicted cell types using `vmR_pred` and color them according to the reference dataset.
+
+```{r}
 DimPlot(seu, group.by = "vmR_pred", cols = seur@misc$colors)
-#DimPlot(seu, group.by = "seurat_clusters", cols= as.character(pals::polychrome()))
+```
 
-seu$leuk_cdr3_nt<-NA
-seu$leuk_cdr3_nt[seu$seurat_clusters %in% c(11,13)]<-seu$cdr3_nt[seu$seurat_clusters %in% c(11,13)]
-DimPlot(seu, group.by = "leuk_cdr3_nt")+NoLegend()
-putative<-names(table(seu$leuk_cdr3_nt)[order(-table(seu$leuk_cdr3_nt))])
+Next, we highlight putative leukemic clones based on cluster identity:
 
-#from adaptive clonoseq
-cloneC<-"CAGGAACACCTCCATAAGCACAGCCTACATGGAGCTGAGCAGCCTGAGATCTGAGGACACGGCCGTGTATTACTGTGCGAGAGGCCTAACCCACACCCACCCCCTACTTATTGTAGTAGTACCAGCTGCTATGACTACTGGGGCCAGGGAACC"
-cloneB<-"CGCGGACAAATCCACGAGCACAGCCTACATGGAGCTGAGCAGCCTGAGATCTGAGGACACGGCCGTGTATTACTGTGCGCGGCGGACTCCGTATTACTATGGTTCGGGGAGTTATACTACTACGGTATGGACGTCTGGGGCCAAGGGACC"
+```{r}
+seu$leuk_cdr3_nt <- NA
+seu$leuk_cdr3_nt[seu$seurat_clusters %in% c(11, 13)] <- seu$cdr3_nt[seu$seurat_clusters %in% c(11, 13)]
+DimPlot(seu, group.by = "leuk_cdr3_nt") + NoLegend()
+
+putative <- names(table(seu$leuk_cdr3_nt)[order(-table(seu$leuk_cdr3_nt))])
+```
+
+# Sequence Alignment with Rust
+
+We align VDJ-derived sequences against known leukemic clones obtained from **Adaptive ClonoSEQ** data. We use the `align()` function from `rustytools`, which is backed by the `bio` crate from Rust for high-performance alignment.
+
+```{r}
+# Adaptive-derived CDR3 sequences
+cloneC <- "CAGGAACACCTCCATAAGCACAGCCTACATGGAGCTGAGCAGCCTGAGATCTGAGGACACGGCCGTGTATTACTGTGCGAGAGGCCTAACCCACACCCACCCCCTACTTATTGTAGTAGTACCAGCTGCTATGACTACTGGGGCCAGGGAACC"
+cloneB <- "CGCGGACAAATCCACGAGCACAGCCTACATGGAGCTGAGCAGCCTGAGATCTGAGGACACGGCCGTGTATTACTGTGCGCGGCGGACTCCGTATTACTATGGTTCGGGGAGTTATACTACTACGGTATGGACGTCTGGGGCCAAGGGACC"
 cloneD <- "GATGTTGGGGTTTATTACTGCATGCAAGGTACACACTGGCCCAACCTAGTGGCAGCCCAGGG"
 cloneE <- "CTGATTATTACTGTGAGACCGGGACCAAGC"
 
+# Compute alignment scores
+seu$cloneC_score <- sapply(seu$cdr3_nt, function(seq) align(seq, cloneC, atype = "local", verbose = FALSE))
+seu$cloneB_score <- sapply(seu$cdr3_nt, function(seq) align(seq, cloneB, atype = "local", verbose = FALSE))
+seu$cloneD_score <- sapply(seu$cdr3_nt, function(seq) align(seq, cloneD, atype = "local", verbose = FALSE))
+seu$cloneE_score <- sapply(seu$cdr3_nt, function(seq) align(seq, cloneE, atype = "local", verbose = FALSE))
+```
 
-seu$cloneC_score<-sapply(seu$cdr3_nt, function(seq) align(seq, cloneC, atype = "local", verbose = F))
-seu$cloneB_score<-sapply(seu$cdr3_nt, function(seq) align(seq, cloneB, atype = "local", verbose = F))
-seu$cloneD_score<-sapply(seu$cdr3_nt, function(seq) align(seq, cloneD, atype = "local", verbose = F))
-seu$cloneE_score<-sapply(seu$cdr3_nt, function(seq) align(seq, cloneE, atype = "local", verbose = F))
+# Alignment Results Visualization
 
-FeaturePlot(seu, features = c("cloneB_score", "cloneC_score", "cloneD_score", "cloneE_score"), order = T, keep.scale="all", cols = c("grey90", "red"), min.cutoff = "q20")
+We visualize the alignment scores on the UMAP embedding:
 
-Biostrings::pairwiseAlignment(putative[1], cloneC, type="global-local")
-Biostrings::pairwiseAlignment(putative[2], cloneB, type="global-local")
+```{r}
+FeaturePlot(seu, features = c("cloneB_score", "cloneC_score", "cloneD_score", "cloneE_score"),
+            order = TRUE, keep.scale = "all",
+            cols = c("grey90", "red"), min.cutoff = "q20")
+```
 
+We can compare specific alignments with `Biostrings::pairwiseAlignment()` to validate alignment quality:
+
+```{r}
+Biostrings::pairwiseAlignment(putative[1], cloneC, type = "global-local")
+Biostrings::pairwiseAlignment(putative[2], cloneB, type = "global-local")
+```
+
+# Functional Confirmation
+
+To validate the leukemic identity of aligned cells, we visualize **CDKN2A** expression. Loss of CDKN2A is a known event in high-risk B-ALL and may support the leukemic phenotype of aligned cells.
+
+```{r}
 FeaturePlot_scCustom(seu, features = "CDKN2A")
 ```
 
-## Appendix
-```{r Appendix}
-sessionInfo()
-```
+# Conclusion
+
+Using Rust-accelerated sequence alignment in `rustytools`, we can rapidly screen thousands of VDJ sequences for similarity to leukemic clones and validate findings through gene expression. This approach is particularly useful in relapsed or ambiguous cases of B-ALL, where clonal detection is critical.

@@ -1,0 +1,137 @@
+---
+title: "How to Extract Coordinates and Sequence from a FASTA File"
+output: html_document
+date: "2024-06-04"
+always_allow_html: true
+editor_options: 
+  chunk_output_type: console
+---
+
+# Overview
+
+This vignette demonstrates how to extract contiguous consensus sequence blocks from a FASTA file using `rustytools`, and how to annotate them with genomic features from various sources such as UCSC, GENCODE, and Ensembl.
+
+This is particularly useful for processing FASTA files derived from consensus calling pipelines (e.g., `samtools consensus`) and for downstream variant or feature annotation.
+
+```{r, eval=F}
+# install.packages("devtools")
+devtools::install_github("furlan-lab/rustytools", force = TRUE)
+```
+
+---
+
+# Load Required Packages
+
+```{r, message=FALSE}
+rm(list = ls())
+suppressPackageStartupMessages({
+  library(rustytools)
+  library(GenomicRanges)
+})
+```
+
+---
+
+# Extracting Consensus Sequences
+
+The `get_consensus()` function extracts sequence blocks containing A/C/T/G from a FASTA file and returns a `GRanges` object with embedded sequence metadata.
+
+```{r}
+root <- file.path(.libPaths()[1], "rustytools/extdata")
+tfasta <- file.path(root, "test.fa")
+results <- get_consensus(tfasta, cores = 1, genome = "toy")
+results[[1]]
+```
+
+The `cores` parameter defines how many threads to use (typically one per chromosome). For toy examples, multi-core use is unnecessary.
+
+---
+
+# Running on Large FASTA Files
+
+For real genomes, such as those from HLA typing or clinical samples:
+
+```{r, eval=F}
+fasta <- "~/Desktop/Junk/GENDX_HLA_Mix1_S1_L001_t1000.fa"
+#results <- get_consensus(fasta, cores = 16, genome = "hg38")
+```
+
+To test on only the **first few contigs** before running a full genome:
+
+```{r, eval=F}
+results <- get_consensus(fasta, cores = 16, genome = "hg38", test_with_n = 1)
+```
+
+---
+
+# Reducing and Merging Consensus Ranges
+
+You can merge nearby regions using `reduce()`:
+
+```{r, eval=F}
+reduced_results <- reduce(results[[1]], min.gapwidth = 2L)
+```
+
+---
+
+# Annotation Methods
+
+## 1. UCSC KnownGene (TxDb)
+
+```{r, eval=F}
+library(TxDb.Hsapiens.UCSC.hg38.knownGene)
+library(VariantAnnotation)
+
+txdb_hg38 <- TxDb.Hsapiens.UCSC.hg38.knownGene
+si <- seqinfo(txdb_hg38)
+
+# Ensure correct seqinfo
+reduced_results@seqinfo <- GenomeInfoDb::Seqinfo(
+  seqnames = si@seqnames[1:22],
+  seqlengths = si@seqlengths[1:22],
+  isCircular = rep(NA, 22),
+  genome = "hg38"
+)
+
+annotated_results <- locateVariants(reduced_results, txdb_hg38, AllVariants())
+table(annotated_results$LOCATION)
+annotated_results[annotated_results$LOCATION == "coding"]
+```
+
+## 2. GENCODE GTF Annotation with `txdbmaker`
+
+```{r, eval=F}
+library(txdbmaker)
+
+gtf_file <- "/Users/sfurlan/Library/CloudStorage/OneDrive-SharedLibraries-FredHutchinsonCancerCenter/Furlan_Lab - General/resources/refs/gencode.v46.annotation.gtf.gz"
+
+txdb <- makeTxDbFromGFF(gtf_file, format = "gtf", dbxrefTag = "gene_name")
+annotated_results2 <- locateVariants(reduced_results, txdb, AllVariants())
+head(annotated_results2)
+```
+
+## 3. Ensembl-based Annotation with `ChIPpeakAnno`
+
+```{r, eval=F}
+library(ChIPpeakAnno)
+library(ensembldb)
+library(EnsDb.Hsapiens.v86)
+
+annoGR <- toGRanges(EnsDb.Hsapiens.v86)
+seqlevelsStyle(reduced_results) <- seqlevelsStyle(annoGR)
+
+annotated_results3 <- annoPeaks(reduced_results, annoGR, bindingType = "fullRange")
+annotated_results3[grepl("^HLA", annotated_results3$gene_name)]$gene_name
+```
+
+---
+
+# Summary
+
+* `get_consensus()` extracts contiguous sequence blocks from FASTA files.
+* Results are returned as `GRanges` objects that are easily annotated.
+* Annotations can be performed using UCSC TxDb, GENCODE GTFs, or Ensembl databases.
+
+This workflow is ideal for consensus-based variant discovery, isoform localization, or follow-up annotation after long-read assemblies.
+
+---

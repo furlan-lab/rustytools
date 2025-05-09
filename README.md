@@ -17,8 +17,8 @@ Version 0.0.2
 - 🔍 **Fuzzy motif detection**  
   Identify imperfect tandem repeats in DNA sequences using Rust-backed pattern matching.
 
-- 🧬 **Indexed FASTA utilities**  
-  Efficient sequence retrieval and scanning from large reference genomes via `faidx`.
+- 🧬 **FASTA utilities**  
+  Efficient sequence retrieval and scanning from large reference genomes.
 
 - 🧠 **MAGIC diffusion**  
   Fast and scalable implementation of the MAGIC algorithm for imputing single-cell RNA-seq data  
@@ -53,8 +53,8 @@ print(res)
 ## Vignettes
 
 * 📘 [Getting Started](articles/introduction.html)
-* 🔁 [Repeat Finding](articles/repeats.html)
-* 🧬 [Indexed FASTA Files](articles/indexed-fasta.html)
+* 🔁 [Repeat Finding](articles/seqAlign.html)
+* 🧬 [Indexed FASTA Files](articles/getConsensus.html)
 * 🧠 [MAGIC Imputation](articles/magic.html)
 * 🧱 [PCHA for Archetype Analysis](articles/pcha.html)
 

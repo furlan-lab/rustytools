@@ -14,20 +14,6 @@ editor_options:
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 
 
-## Installing Rust
-
-First you need to have an updated Rust installation. Go to this [site](https://www.rust-lang.org/tools/install) to learn how to install Rust.
-
-
-## Installing rustytools
-
-You will need to have the devtools package installed...
-
-```{r, eval=F}
-devtools::install_github("furlan-lab/rustytools", force=T)
-```
-
-
 ## Overview of Magic implemented in R and Rust
 
 *(“Markov Affinity-based Graph Imputation of Cells” – van Dijk et al., 2018)*
