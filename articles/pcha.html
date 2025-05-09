@@ -77,25 +77,25 @@
     
     
 <!-- load MathJax from CDN -->
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script><div class="section level3">
-<h3 id="installing-rust">Installing Rust<a class="anchor" aria-label="anchor" href="#installing-rust"></a>
-</h3>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script><div class="section level2">
+<h2 id="installing-rust">Installing Rust<a class="anchor" aria-label="anchor" href="#installing-rust"></a>
+</h2>
 <p>First you need to have an updated Rust installation. Go to this <a href="https://www.rust-lang.org/tools/install" class="external-link">site</a> to learn how to
 install Rust.</p>
 </div>
-<div class="section level3">
-<h3 id="installing-rustytools">Installing rustytools<a class="anchor" aria-label="anchor" href="#installing-rustytools"></a>
-</h3>
+<div class="section level2">
+<h2 id="installing-rustytools">Installing rustytools<a class="anchor" aria-label="anchor" href="#installing-rustytools"></a>
+</h2>
 <p>You will need to have the devtools package installed…</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"furlan-lab/rustytools"</span>, force<span class="op">=</span><span class="cn">T</span><span class="op">)</span></span></code></pre></div>
 </div>
+<div class="section level2">
+<h2 id="overview-of-pcha-implemented-in-rust">Overview of PCHA implemented in Rust<a class="anchor" aria-label="anchor" href="#overview-of-pcha-implemented-in-rust"></a>
+</h2>
 <div class="section level3">
-<h3 id="overview-of-pcha-implemented-in-rust">Overview of PCHA implemented in Rust<a class="anchor" aria-label="anchor" href="#overview-of-pcha-implemented-in-rust"></a>
+<h3 id="problem-set-up">1. Problem set-up<a class="anchor" aria-label="anchor" href="#problem-set-up"></a>
 </h3>
-<div class="section level4">
-<h4 id="problem-set-up">1. Problem set-up<a class="anchor" aria-label="anchor" href="#problem-set-up"></a>
-</h4>
 <table style="width:100%;" class="table">
 <colgroup>
 <col width="24%">
@@ -164,9 +164,9 @@ C\ge 0,\quad S\ge 0,\qquad
 </annotation></semantics></math></p>
 <hr>
 </div>
-<div class="section level4">
-<h4 id="algebra-that-drives-the-code">2. Algebra that drives the code<a class="anchor" aria-label="anchor" href="#algebra-that-drives-the-code"></a>
-</h4>
+<div class="section level3">
+<h3 id="algebra-that-drives-the-code">2. Algebra that drives the code<a class="anchor" aria-label="anchor" href="#algebra-that-drives-the-code"></a>
+</h3>
 <ol style="list-style-type: decimal">
 <li>
 <p><strong>Expand (1)</strong></p>
@@ -237,9 +237,9 @@ w.r.t.
 </ol>
 <hr>
 </div>
-<div class="section level4">
-<h4 id="initialisation">3. Initialisation<a class="anchor" aria-label="anchor" href="#initialisation"></a>
-</h4>
+<div class="section level3">
+<h3 id="initialisation">3. Initialisation<a class="anchor" aria-label="anchor" href="#initialisation"></a>
+</h3>
 <ul>
 <li>
 <p><strong>Furthest-Sum (FS)</strong> finds
@@ -262,9 +262,9 @@ Each column is drawn i.i.d. from
 </ul>
 <hr>
 </div>
-<div class="section level4">
-<h4 id="stopping-rule">4. Stopping rule<a class="anchor" aria-label="anchor" href="#stopping-rule"></a>
-</h4>
+<div class="section level3">
+<h3 id="stopping-rule">4. Stopping rule<a class="anchor" aria-label="anchor" href="#stopping-rule"></a>
+</h3>
 <p>Iterate until</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><mo stretchy="true" form="prefix">|</mo><msup><mrow><mi mathvariant="normal">S</mi><mi mathvariant="normal">S</mi><mi mathvariant="normal">E</mi></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo>−</mo><mn>1</mn><mo stretchy="true" form="postfix">)</mo></mrow></msup><mo>−</mo><msup><mrow><mi mathvariant="normal">S</mi><mi mathvariant="normal">S</mi><mi mathvariant="normal">E</mi></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></msup><mo stretchy="true" form="postfix">|</mo></mrow><msup><mrow><mi mathvariant="normal">S</mi><mi mathvariant="normal">S</mi><mi mathvariant="normal">E</mi></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></msup></mfrac><mo>&lt;</mo><mtext mathvariant="normal">tol</mtext><mspace width="1.0em"></mspace><mtext mathvariant="normal">or</mtext><mspace width="1.0em"></mspace><mfrac><msup><mrow><mi mathvariant="normal">S</mi><mi mathvariant="normal">S</mi><mi mathvariant="normal">E</mi></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow></msup><mrow><mo stretchy="false" form="postfix">∥</mo><msub><mi>X</mi><mi>U</mi></msub><msubsup><mo stretchy="false" form="postfix">∥</mo><mi>F</mi><mn>2</mn></msubsup></mrow></mfrac><mo>&gt;</mo><mn>1</mn><mo>−</mo><mi>ε</mi><mspace width="0.278em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mtext mathvariant="normal">≈ 99.99 % var. expl.</mtext><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
 \frac{|\mathrm{SSE}^{(t-1)}-\mathrm{SSE}^{(t)}|}
@@ -276,9 +276,9 @@ Each column is drawn i.i.d. from
 <p>or the iteration cap is hit (default 750).</p>
 <hr>
 </div>
-<div class="section level4">
-<h4 id="output">5. Output<a class="anchor" aria-label="anchor" href="#output"></a>
-</h4>
+<div class="section level3">
+<h3 id="output">5. Output<a class="anchor" aria-label="anchor" href="#output"></a>
+</h3>
 <ul>
 <li>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>C</mi><annotation encoding="application/x-tex">C</annotation></semantics></math>
@@ -293,189 +293,6 @@ re-ordered by column usage
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">V</mi><mi mathvariant="normal">a</mi><mi mathvariant="normal">r</mi><mi mathvariant="normal">E</mi><mi mathvariant="normal">x</mi><mi mathvariant="normal">p</mi><mi mathvariant="normal">l</mi></mrow><mo>=</mo><mn>1</mn><mo>−</mo><mrow><mi mathvariant="normal">S</mi><mi mathvariant="normal">S</mi><mi mathvariant="normal">E</mi></mrow><mi>/</mi><mo stretchy="false" form="postfix">∥</mo><msub><mi>X</mi><mi>U</mi></msub><msubsup><mo stretchy="false" form="postfix">∥</mo><mi>F</mi><mn>2</mn></msubsup></mrow><annotation encoding="application/x-tex">\mathrm{VarExpl}=1-\mathrm{SSE}/\|X_U\|_F^{2}</annotation></semantics></math>.</li>
 </ul>
 <hr>
-</div>
-</div>
-<div class="section level3">
-<h3 id="create-a-data-set-with-a-known-archetypal-structure">Create a data set with a known archetypal structure<a class="anchor" aria-label="anchor" href="#create-a-data-set-with-a-known-archetypal-structure"></a>
-</h3>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://furlan-lab.github.io/rustytools/">rustytools</a></span><span class="op">)</span></span>
-<span><span class="co">### Toy data with a known archetypal structure</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
-<span><span class="va">p</span>  <span class="op">&lt;-</span> <span class="fl">60</span>            <span class="co"># genes</span></span>
-<span><span class="va">n</span>  <span class="op">&lt;-</span> <span class="fl">300</span>           <span class="co"># cells</span></span>
-<span><span class="va">k0</span> <span class="op">&lt;-</span> <span class="fl">5</span>             <span class="co"># ground-truth archetypes</span></span>
-<span></span>
-<span><span class="co"># 1. ground-truth archetype matrix A (p × k0)</span></span>
-<span><span class="va">A</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Exponential.html" class="external-link">rexp</a></span><span class="op">(</span><span class="va">p</span> <span class="op">*</span> <span class="va">k0</span>, <span class="fl">1</span><span class="op">)</span>, <span class="va">p</span>, <span class="va">k0</span><span class="op">)</span></span>
-<span><span class="co"># 2. sample coefficients S on the simplex</span></span>
-<span><span class="va">alpha</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/Exponential.html" class="external-link">rexp</a></span><span class="op">(</span><span class="va">k0</span> <span class="op">*</span> <span class="va">n</span>, <span class="fl">1</span><span class="op">)</span>, <span class="va">k0</span>, <span class="va">n</span><span class="op">)</span></span>
-<span><span class="va">S</span>     <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/sweep.html" class="external-link">sweep</a></span><span class="op">(</span><span class="va">alpha</span>, <span class="fl">2</span>, <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">colSums</a></span><span class="op">(</span><span class="va">alpha</span><span class="op">)</span>, <span class="st">"/"</span><span class="op">)</span></span>
-<span><span class="co"># 3. generate data with small noise</span></span>
-<span><span class="va">X</span> <span class="op">&lt;-</span> <span class="va">A</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="va">S</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/stats/GammaDist.html" class="external-link">rgamma</a></span><span class="op">(</span><span class="va">p</span> <span class="op">*</span> <span class="va">n</span>, shape <span class="op">=</span> <span class="fl">1</span>, rate <span class="op">=</span> <span class="fl">50</span><span class="op">)</span>, <span class="va">p</span>, <span class="va">n</span><span class="op">)</span></span></code></pre></div>
-</div>
-<div class="section level2">
-<h2 id="finding-optimal-number-of-archetypes">Finding optimal number of archetypes<a class="anchor" aria-label="anchor" href="#finding-optimal-number-of-archetypes"></a>
-</h2>
-<p>First we set a number of k to iterate through. Using the future
-library we can perform pcha on each k in parallel. We normalize the sum
-squared error, then use the <code>find_knee_pt</code> function to find
-the optimal number of archetypes which is our ground truth archetype
-from above</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ks</span> <span class="op">&lt;-</span> <span class="fl">1</span><span class="op">:</span><span class="fl">10</span></span>
-<span><span class="va">sse</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">ks</span>, <span class="kw">function</span><span class="op">(</span><span class="va">k</span><span class="op">)</span> <span class="fu"><a href="../reference/pcha.html">pcha</a></span><span class="op">(</span><span class="va">X</span>, <span class="va">k</span><span class="op">)</span><span class="op">$</span><span class="va">sse</span><span class="op">)</span></span>
-<span><span class="va">norm_sse</span>  <span class="op">&lt;-</span> <span class="va">sse</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">X</span> <span class="op">*</span> <span class="va">X</span><span class="op">)</span>                           </span>
-<span><span class="va">kp</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/find_knee_pt.html">find_knee_pt</a></span><span class="op">(</span><span class="va">norm_sse</span>, <span class="va">ks</span>, make_plot <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p><img src="pcha_files/figure-html/unnamed-chunk-3-1.png" width="100%"></p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Optimal number of archetypes ="</span>, <span class="va">kp</span><span class="op">$</span><span class="va">knee_x</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Optimal number of archetypes = 5</span></span></code></pre>
-<div class="section level3">
-<h3 id="what-does-this-look-like-in-single-cell-rna-sequencing-data">What does this look like in single cell RNA sequencing data<a class="anchor" aria-label="anchor" href="#what-does-this-look-like-in-single-cell-rna-sequencing-data"></a>
-</h3>
-<p>First subset out the tumor</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://satijalab.org/seurat" class="external-link">Seurat</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/samuel-marsh/scCustomize" class="external-link">scCustomize</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://magrittr.tidyverse.org" class="external-link">magrittr</a></span><span class="op">)</span></span>
-<span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="st">"~/Fred Hutch Cancer Center/Furlan_Lab - General/experiments/patient_marrows/annon/AML101/aml101.cds"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://satijalab.org/seurat/reference/DimPlot.html" class="external-link">DimPlot</a></span><span class="op">(</span><span class="va">seu</span>, group.by <span class="op">=</span> <span class="st">"seurat_clusters"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="pcha_files/figure-html/unnamed-chunk-4-1.png" width="100%"></p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://satijalab.org/seurat/reference/DimPlot.html" class="external-link">DimPlot</a></span><span class="op">(</span><span class="va">seu</span>, group.by <span class="op">=</span> <span class="st">"geno"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="pcha_files/figure-html/unnamed-chunk-4-2.png" width="100%"></p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">seu</span><span class="op">$</span><span class="va">sb</span> <span class="op">&lt;-</span> <span class="va">seu</span><span class="op">$</span><span class="va">geno</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="st">"0"</span> <span class="op">&amp;</span> <span class="va">seu</span><span class="op">$</span><span class="va">seurat_clusters</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"0"</span>, <span class="st">"1"</span>, <span class="st">"2"</span>, <span class="st">"3"</span>, <span class="st">"4"</span>, <span class="st">"11"</span><span class="op">)</span></span>
-<span><span class="co">#DimPlot(seu, group.by = "sb")</span></span>
-<span></span>
-<span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="va">seu</span><span class="op">[</span>,<span class="va">seu</span><span class="op">$</span><span class="va">sb</span><span class="op">]</span></span>
-<span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/NormalizeData.html" class="external-link">NormalizeData</a></span><span class="op">(</span><span class="va">seu</span>, verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://satijalab.org/seurat/reference/ScaleData.html" class="external-link">ScaleData</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://satijalab.org/seurat/reference/FindVariableFeatures.html" class="external-link">FindVariableFeatures</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://satijalab.org/seurat/reference/RunPCA.html" class="external-link">RunPCA</a></span><span class="op">(</span>npcs <span class="op">=</span> <span class="fl">100</span>, verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://satijalab.org/seurat/reference/ElbowPlot.html" class="external-link">ElbowPlot</a></span><span class="op">(</span><span class="va">seu</span>, ndims <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></code></pre></div>
-<p><img src="pcha_files/figure-html/unnamed-chunk-4-3.png" width="100%"></p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/FindNeighbors.html" class="external-link">FindNeighbors</a></span><span class="op">(</span><span class="va">seu</span>, dims <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">35</span>, verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://satijalab.org/seurat/reference/FindClusters.html" class="external-link">FindClusters</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://satijalab.org/seurat/reference/RunUMAP.html" class="external-link">RunUMAP</a></span><span class="op">(</span>dims <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">35</span>, n.epochs <span class="op">=</span> <span class="fl">500</span>, verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://satijalab.org/seurat/reference/DimPlot.html" class="external-link">DimPlot</a></span><span class="op">(</span><span class="va">seu</span><span class="op">)</span></span></code></pre></div>
-<p><img src="pcha_files/figure-html/unnamed-chunk-4-4.png" width="100%"></p>
-<p>Use some magic.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/seurat_magic.html">seurat_magic</a></span><span class="op">(</span><span class="va">seu</span>, alpha <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://satijalab.github.io/seurat-object/reference/DefaultAssay.html" class="external-link">DefaultAssay</a></span><span class="op">(</span><span class="va">seu</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"MAGIC"</span></span>
-<span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/NormalizeData.html" class="external-link">NormalizeData</a></span><span class="op">(</span><span class="va">seu</span>, assay <span class="op">=</span> <span class="st">"MAGIC"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://satijalab.org/seurat/reference/ScaleData.html" class="external-link">ScaleData</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://satijalab.org/seurat/reference/FindVariableFeatures.html" class="external-link">FindVariableFeatures</a></span><span class="op">(</span>nfeatures <span class="op">=</span> <span class="fl">5000</span>, assay <span class="op">=</span> <span class="st">"MAGIC"</span>, verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span>  <span class="fu"><a href="https://satijalab.org/seurat/reference/RunPCA.html" class="external-link">RunPCA</a></span><span class="op">(</span>assay <span class="op">=</span> <span class="st">"MAGIC"</span>, npcs <span class="op">=</span> <span class="fl">100</span>, verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span></span></code></pre></div>
-<p>Find nuber of PCs that correspond to 85% of variance</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># pull out the per‐PC standard deviations (as before)</span></span>
-<span><span class="va">sdev</span> <span class="op">&lt;-</span> <span class="va">seu</span><span class="op">@</span><span class="va">reductions</span><span class="op">$</span><span class="va">pca</span><span class="op">@</span><span class="va">stdev</span></span>
-<span></span>
-<span><span class="co"># compute the % variance explained by each PC</span></span>
-<span><span class="va">explained_var</span> <span class="op">&lt;-</span> <span class="va">sdev</span><span class="op">^</span><span class="fl">2</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">sdev</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># cumulative sum</span></span>
-<span><span class="va">cum_var</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cumsum.html" class="external-link">cumsum</a></span><span class="op">(</span><span class="va">explained_var</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># find the first PC where cumulative ≥ 0.85</span></span>
-<span><span class="va">pct_cutoff</span> <span class="op">&lt;-</span> <span class="fl">0.85</span></span>
-<span><span class="va">n_pc_85</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">cum_var</span> <span class="op">&gt;=</span> <span class="va">pct_cutoff</span><span class="op">)</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="st">"Using "</span>, <span class="va">n_pc_85</span>, <span class="st">" PCs, which explain "</span>,</span>
-<span>        <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fl">100</span> <span class="op">*</span> <span class="va">cum_var</span><span class="op">[</span><span class="va">n_pc_85</span><span class="op">]</span>, <span class="fl">1</span><span class="op">)</span>, <span class="st">"% of variance.\n"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># now subset your cell×PC matrix</span></span>
-<span><span class="va">pcs_85</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.github.io/seurat-object/reference/Embeddings.html" class="external-link">Embeddings</a></span><span class="op">(</span><span class="va">seu</span>, <span class="st">"pca"</span><span class="op">)</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="va">n_pc_85</span>, drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span></span>
-<span></span>
-<span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/FindNeighbors.html" class="external-link">FindNeighbors</a></span><span class="op">(</span><span class="va">seu</span>, dims <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">n_pc_85</span>, verbose <span class="op">=</span> <span class="cn">F</span>, k.param <span class="op">=</span> <span class="fl">5</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://satijalab.org/seurat/reference/FindClusters.html" class="external-link">FindClusters</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://satijalab.org/seurat/reference/RunUMAP.html" class="external-link">RunUMAP</a></span><span class="op">(</span>dims <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">n_pc_85</span>, n.epochs <span class="op">=</span> <span class="fl">500</span>, verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://satijalab.org/seurat/reference/DimPlot.html" class="external-link">DimPlot</a></span><span class="op">(</span><span class="va">seu</span>, reduction <span class="op">=</span> <span class="st">"umap"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="pcha_files/figure-html/unnamed-chunk-6-1.png" width="100%"></p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">X</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">seu</span><span class="op">@</span><span class="va">reductions</span><span class="op">$</span><span class="va">pca</span><span class="op">@</span><span class="va">cell.embeddings</span><span class="op">[</span>,<span class="fl">1</span><span class="op">:</span><span class="va">n_pc_85</span><span class="op">]</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span></span>
-<span><span class="va">ks</span> <span class="op">&lt;-</span> <span class="fl">1</span><span class="op">:</span><span class="fl">15</span></span>
-<span><span class="va">sse</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">sapply</a></span><span class="op">(</span><span class="va">ks</span>, <span class="kw">function</span><span class="op">(</span><span class="va">k</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="st">"processing k: "</span> , <span class="va">k</span><span class="op">)</span></span>
-<span>  <span class="kw"><a href="https://rdrr.io/r/base/function.html" class="external-link">return</a></span><span class="op">(</span><span class="fu"><a href="../reference/pcha.html">pcha</a></span><span class="op">(</span><span class="va">X</span>, <span class="va">k</span><span class="op">)</span><span class="op">$</span><span class="va">sse</span><span class="op">)</span></span>
-<span>  <span class="op">}</span><span class="op">)</span></span>
-<span><span class="va">norm_sse</span>  <span class="op">&lt;-</span> <span class="va">sse</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">X</span> <span class="op">*</span> <span class="va">X</span><span class="op">)</span>                           </span>
-<span><span class="va">kp</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/find_knee_pt.html">find_knee_pt</a></span><span class="op">(</span><span class="va">norm_sse</span>, <span class="va">ks</span>, make_plot <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p><img src="pcha_files/figure-html/unnamed-chunk-6-2.png" width="100%"></p>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="st">"Optimal number of archetypes ="</span>, <span class="va">kp</span><span class="op">$</span><span class="va">knee_x</span>, <span class="st">"\n"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Optimal number of archetypes = 3</span></span></code></pre>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">noc</span> <span class="op">&lt;-</span> <span class="va">kp</span><span class="op">$</span><span class="va">knee_x</span></span>
-<span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/pcha.html">pcha</a></span><span class="op">(</span><span class="va">X</span>, noc <span class="op">=</span> <span class="va">noc</span><span class="op">)</span> </span>
-<span><span class="va">weights_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">S</span><span class="op">)</span><span class="op">)</span>     <span class="co"># cells × k</span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/row_colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">weights_df</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"arch"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">noc</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span></span>
-<span><span class="co"># a single label: archetype with the largest weight</span></span>
-<span><span class="va">seu</span><span class="op">$</span><span class="va">max_arch</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">weights_df</span>, <span class="fl">1L</span>, <span class="va">which.max</span><span class="op">)</span>,</span>
-<span>  levels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">noc</span><span class="op">)</span>,</span>
-<span>  labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"Arch"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">noc</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://satijalab.org/seurat/reference/DimPlot.html" class="external-link">DimPlot</a></span><span class="op">(</span><span class="va">seu</span>, reduction <span class="op">=</span> <span class="st">"umap"</span>, group.by <span class="op">=</span> <span class="st">"max_arch"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="pcha_files/figure-html/unnamed-chunk-6-3.png" width="100%"></p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">S_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">S</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/row_colnames.html" class="external-link">colnames</a></span><span class="op">(</span><span class="va">S_df</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"Arch"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">S_df</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 2) pick your “specialist” threshold</span></span>
-<span><span class="va">specialist_thresh</span> <span class="op">&lt;-</span> <span class="fl">0.95</span></span>
-<span></span>
-<span></span>
-<span><span class="co"># 3) for each cell, find if its max-weight &gt; threshold; if so, label by archetype</span></span>
-<span><span class="va">max_w</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">S_df</span>, <span class="fl">1</span>, <span class="va">max</span><span class="op">)</span></span>
-<span><span class="va">best_k</span>  <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">S_df</span>, <span class="fl">1</span>, <span class="va">which.max</span><span class="op">)</span></span>
-<span><span class="va">specialist_label</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">max_w</span> <span class="op">&gt;</span> <span class="va">specialist_thresh</span>,</span>
-<span>                           <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"Arch"</span>, <span class="va">best_k</span><span class="op">)</span>,</span>
-<span>                           <span class="cn">NA_character_</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># 4) add to Seurat</span></span>
-<span><span class="va">seu</span><span class="op">$</span><span class="va">specialist</span> <span class="op">&lt;-</span> <span class="va">specialist_label</span></span>
-<span></span>
-<span></span>
-<span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/DimPlot.html" class="external-link">DimPlot</a></span><span class="op">(</span><span class="va">seu</span>, reduction <span class="op">=</span> <span class="st">"umap"</span>, group.by <span class="op">=</span> <span class="st">"specialist"</span><span class="op">)</span></span>
-<span><span class="va">p</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_colour_discrete.html" class="external-link">scale_colour_discrete</a></span><span class="op">(</span>na.value <span class="op">=</span> <span class="st">"lightgrey"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="pcha_files/figure-html/unnamed-chunk-6-4.png" width="100%"></p>
-</div>
-<div class="section level3">
-<h3 id="pathway-analysis-of-archetype-specialists">Pathway analysis of archetype specialists<a class="anchor" aria-label="anchor" href="#pathway-analysis-of-archetype-specialists"></a>
-</h3>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://purrr.tidyverse.org/" class="external-link">purrr</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://yulab-smu.top/contribution-knowledge-mining/" class="external-link">clusterProfiler</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">org.Hs.eg.db</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://satijalab.github.io/seurat-object/reference/DefaultAssay.html" class="external-link">DefaultAssay</a></span><span class="op">(</span><span class="va">seu</span><span class="op">)</span><span class="op">&lt;-</span> <span class="st">"RNA"</span></span>
-<span><span class="va">seu_spec</span> <span class="op">&lt;-</span><span class="va">seu</span><span class="op">[</span>,<span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">seu</span><span class="op">$</span><span class="va">specialist</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="co"># 1) For each archetype, find a “marker gene list” (here: top 200 avg. expr)</span></span>
-<span><span class="va">marker_genes</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/FindAllMarkers.html" class="external-link">FindAllMarkers</a></span><span class="op">(</span><span class="va">seu_spec</span>, group.by <span class="op">=</span> <span class="st">"specialist"</span>, <span class="op">)</span></span>
-<span><span class="va">marker_genes</span><span class="op">$</span><span class="va">diff</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">marker_genes</span><span class="op">$</span><span class="va">pct.1</span> <span class="op">-</span> <span class="va">marker_genes</span><span class="op">$</span><span class="va">pct.2</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">marker_genes_filt</span> <span class="op">&lt;-</span> <span class="va">marker_genes</span><span class="op">[</span><span class="va">marker_genes</span><span class="op">$</span><span class="va">p_val_adj</span><span class="op">&lt;</span><span class="fl">1e-2</span> <span class="op">&amp;</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">abs</a></span><span class="op">(</span><span class="va">marker_genes</span><span class="op">$</span><span class="va">avg_log2FC</span><span class="op">)</span> <span class="op">&gt;</span> <span class="fl">2</span> <span class="op">&amp;</span> <span class="va">marker_genes</span><span class="op">$</span><span class="va">diff</span><span class="op">&gt;</span><span class="fl">0.1</span>,<span class="op">]</span></span>
-<span></span>
-<span><span class="va">marker_genes_filt</span> <span class="op">&lt;-</span> <span class="va">marker_genes_filt</span><span class="op">[</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/duplicated.html" class="external-link">duplicated</a></span><span class="op">(</span><span class="va">marker_genes_filt</span><span class="op">$</span><span class="va">gene</span><span class="op">)</span>,<span class="op">]</span></span>
-<span></span>
-<span><span class="va">ccr</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/pkg/clusterProfiler/man/compareCluster.html" class="external-link">compareCluster</a></span><span class="op">(</span></span>
-<span>  <span class="va">gene</span> <span class="op">~</span> <span class="va">cluster</span>,</span>
-<span>  data         <span class="op">=</span> <span class="va">marker_genes_filt</span>,</span>
-<span>  fun          <span class="op">=</span> <span class="st">"enrichGO"</span>,</span>
-<span>  OrgDb        <span class="op">=</span> <span class="va">org.Hs.eg.db</span>,</span>
-<span>  keyType      <span class="op">=</span> <span class="st">"SYMBOL"</span>,</span>
-<span>  ont          <span class="op">=</span> <span class="st">"BP"</span>,</span>
-<span>  pAdjustMethod<span class="op">=</span> <span class="st">"BH"</span>,</span>
-<span>  pvalueCutoff <span class="op">=</span> <span class="fl">0.05</span>,</span>
-<span>  qvalueCutoff <span class="op">=</span> <span class="fl">0.05</span>,</span>
-<span>  readable     <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># a dotplot of the top GO terms per cluster:</span></span>
-<span><span class="fu"><a href="https://rdrr.io/pkg/enrichplot/man/dotplot.html" class="external-link">dotplot</a></span><span class="op">(</span><span class="va">ccr</span>, showCategory<span class="op">=</span><span class="fl">10</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">ggtitle</a></span><span class="op">(</span><span class="st">"GO BP enrichment by Archetype"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="pcha_files/figure-html/unnamed-chunk-7-1.png" width="100%"></p>
 </div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

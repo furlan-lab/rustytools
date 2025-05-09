@@ -91,7 +91,7 @@ install Rust.</p>
 <code class="sourceCode R"><span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"furlan-lab/rustytools"</span>, force<span class="op">=</span><span class="cn">T</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="overview-of-magic-implemented-in-rust">Overview of Magic implemented in Rust<a class="anchor" aria-label="anchor" href="#overview-of-magic-implemented-in-rust"></a>
+<h2 id="overview-of-magic-implemented-in-r-and-rust">Overview of Magic implemented in R and Rust<a class="anchor" aria-label="anchor" href="#overview-of-magic-implemented-in-r-and-rust"></a>
 </h2>
 <p><em>(“Markov Affinity-based Graph Imputation of Cells” – van Dijk et
 al., 2018)</em></p>
@@ -160,6 +160,7 @@ al., 2018)</em></p>
 </h4>
 <p>Compute <em>k</em> nearest neighbours in the <em>m</em>-dimensional
 PCA space (typically <em>k</em> ≈ 30, <em>m</em> ≈ 100).</p>
+<p>This is done by Seurat or related packages.</p>
 </div>
 <div class="section level4">
 <h4 id="adaptive-gaussian-kernel">2 Adaptive Gaussian kernel<a class="anchor" aria-label="anchor" href="#adaptive-gaussian-kernel"></a>
@@ -194,6 +195,10 @@ D_{ii} = \sum_{j} A_{ij}.
 </annotation></semantics></math></p>
 <p>Now each row of <strong>P</strong> sums to 1 → one step of a random
 walk on the cell graph.</p>
+<p>This is done in R:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">row_sums</span> <span class="op">&lt;-</span> <span class="fu">Matrix</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/Matrix/man/colSums-methods.html" class="external-link">rowSums</a></span><span class="op">(</span><span class="va">A</span><span class="op">)</span></span>
+<span><span class="va">P</span> <span class="op">&lt;-</span> <span class="fu">Matrix</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/Matrix/man/Diagonal.html" class="external-link">Diagonal</a></span><span class="op">(</span>x <span class="op">=</span> <span class="fl">1</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmax</a></span><span class="op">(</span><span class="va">row_sums</span>, <span class="fl">1e-12</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://rdrr.io/r/base/matmult.html" class="external-link">%*%</a></span> <span class="va">A</span></span></code></pre></div>
 </div>
 <div class="section level4">
 <h4 id="diffusion-raise-to-power-t">4 Diffusion (raise to power <em>t</em>)<a class="anchor" aria-label="anchor" href="#diffusion-raise-to-power-t"></a>
@@ -244,18 +249,6 @@ therefore controls how far one solves the heat-equation</p>
 <p>MAGIC performs this on a <em>graph</em> and stops at a user-chosen
 <em>t</em> (often 2–6); too small → little denoising, too large →
 over-smoothing.</p>
-<hr>
-</div>
-<div class="section level3">
-<h3 id="where-our-rust-kernel-fits">Where our Rust kernel fits<a class="anchor" aria-label="anchor" href="#where-our-rust-kernel-fits"></a>
-</h3>
-<p>Steps 1–3 (k-NN, kernel, Markov row-normalisation) happen in
-R/Python. The Rust function <code>diffuse_expr_r()</code> you now have
-implements <strong>step 4 + 5</strong>:</p>
-<pre class="text"><code>(P, X, t)  ──►  Ŷ = Pᵗ · X</code></pre>
-<p>It expects <strong>P</strong> already row-stochastic; raising to
-power <em>t</em> and the matrix–vector multiply are done in parallel for
-speed and memory efficiency.</p>
 <hr>
 </div>
 </div>
@@ -311,6 +304,19 @@ diffused values.</p></li>
 </ul>
 </div>
 <div class="section level3">
+<h3 id="special-cases-1">Special cases<a class="anchor" aria-label="anchor" href="#special-cases-1"></a>
+</h3>
+<ul>
+<li><p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\alpha = 0</annotation></semantics></math>:<br><span class="math inline">$X_{\rm imp}(0) = X$</span>.<br>
+No diffusion—returns the raw data unchanged.</p></li>
+<li><p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>α</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\alpha = 1</annotation></semantics></math>:<br><span class="math inline">$X_{\rm imp}(1) = P^{t}\,X$</span>.<br>
+Full MAGIC imputation.</p></li>
+<li><p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0</mn><mo>&lt;</mo><mi>α</mi><mo>&lt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">0 &lt; \alpha &lt; 1</annotation></semantics></math>:<br>
+Partial smoothing. Each entry is a convex combination of the raw and
+diffused values.</p></li>
+</ul>
+</div>
+<div class="section level3">
 <h3 id="per-entry-formula">Per-entry formula<a class="anchor" aria-label="anchor" href="#per-entry-formula"></a>
 </h3>
 <p>For each cell
@@ -348,61 +354,6 @@ or the underlying graph.</p></li>
 </ul>
 <hr>
 </div>
-</div>
-<div class="section level2">
-<h2 id="how-to-run-magic-in-rrust">How to run MAGIC in R/Rust<a class="anchor" aria-label="anchor" href="#how-to-run-magic-in-rrust"></a>
-</h2>
-<p>First we take some data, subset to the tumor cells that express
-modest levels of CD33. Lets see how they look after Magic.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">suppressPackageStartupMessages</a></span><span class="op">(</span><span class="op">{</span></span>
-<span>  <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://satijalab.org/seurat" class="external-link">Seurat</a></span><span class="op">)</span></span>
-<span>  <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/samuel-marsh/scCustomize" class="external-link">scCustomize</a></span><span class="op">)</span></span>
-<span>  <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://furlan-lab.github.io/rustytools/">rustytools</a></span><span class="op">)</span>   <span class="co"># your package exposing diffuse_expr_r()</span></span>
-<span>  <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://magrittr.tidyverse.org" class="external-link">magrittr</a></span><span class="op">)</span></span>
-<span><span class="op">}</span><span class="op">)</span></span>
-<span></span>
-<span></span>
-<span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="st">"~/Fred Hutch Cancer Center/Furlan_Lab - General/experiments/patient_marrows/annon/AML101/aml101.cds"</span><span class="op">)</span></span>
-<span><span class="va">seu</span><span class="op">$</span><span class="va">sb</span> <span class="op">&lt;-</span> <span class="va">seu</span><span class="op">$</span><span class="va">geno</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="st">"0"</span> <span class="op">&amp;</span> <span class="va">seu</span><span class="op">$</span><span class="va">seurat_clusters</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"0"</span>, <span class="st">"1"</span>, <span class="st">"2"</span>, <span class="st">"3"</span>, <span class="st">"4"</span>, <span class="st">"11"</span><span class="op">)</span></span>
-<span><span class="co">#DimPlot(seu, group.by = "sb")</span></span>
-<span></span>
-<span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="va">seu</span><span class="op">[</span>,<span class="va">seu</span><span class="op">$</span><span class="va">sb</span><span class="op">]</span></span>
-<span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/NormalizeData.html" class="external-link">NormalizeData</a></span><span class="op">(</span><span class="va">seu</span>, verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://satijalab.org/seurat/reference/ScaleData.html" class="external-link">ScaleData</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://satijalab.org/seurat/reference/FindVariableFeatures.html" class="external-link">FindVariableFeatures</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://satijalab.org/seurat/reference/RunPCA.html" class="external-link">RunPCA</a></span><span class="op">(</span>npcs <span class="op">=</span> <span class="fl">100</span>, verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://satijalab.org/seurat/reference/ElbowPlot.html" class="external-link">ElbowPlot</a></span><span class="op">(</span><span class="va">seu</span>, ndims <span class="op">=</span> <span class="fl">100</span><span class="op">)</span></span></code></pre></div>
-<p><img src="magic_files/figure-html/unnamed-chunk-2-1.png" width="100%"></p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://satijalab.org/seurat/reference/FindNeighbors.html" class="external-link">FindNeighbors</a></span><span class="op">(</span><span class="va">seu</span>, dims <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">35</span>, verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://satijalab.org/seurat/reference/FindClusters.html" class="external-link">FindClusters</a></span><span class="op">(</span>verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="fu"><a href="https://satijalab.org/seurat/reference/RunUMAP.html" class="external-link">RunUMAP</a></span><span class="op">(</span>dims <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">35</span>, n.epochs <span class="op">=</span> <span class="fl">500</span>, verbose <span class="op">=</span> <span class="cn">F</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://satijalab.org/seurat/reference/DimPlot.html" class="external-link">DimPlot</a></span><span class="op">(</span><span class="va">seu</span><span class="op">)</span></span></code></pre></div>
-<p><img src="magic_files/figure-html/unnamed-chunk-2-2.png" width="100%"></p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/seurat_magic.html">seurat_magic</a></span><span class="op">(</span><span class="va">seu</span>, alpha <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://satijalab.github.io/seurat-object/reference/DefaultAssay.html" class="external-link">DefaultAssay</a></span><span class="op">(</span><span class="va">seu</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"RNA"</span></span>
-<span><span class="fu"><a href="https://samuel-marsh.github.io/scCustomize/reference/FeaturePlot_scCustom.html" class="external-link">FeaturePlot_scCustom</a></span><span class="op">(</span><span class="va">seu</span>, <span class="st">"CD33"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="magic_files/figure-html/unnamed-chunk-2-3.png" width="100%"></p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://satijalab.github.io/seurat-object/reference/DefaultAssay.html" class="external-link">DefaultAssay</a></span><span class="op">(</span><span class="va">seu</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"MAGIC"</span></span>
-<span><span class="fu"><a href="https://samuel-marsh.github.io/scCustomize/reference/FeaturePlot_scCustom.html" class="external-link">FeaturePlot_scCustom</a></span><span class="op">(</span><span class="va">seu</span>, <span class="st">"CD33"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="magic_files/figure-html/unnamed-chunk-2-4.png" width="100%"></p>
-</div>
-<div class="section level2">
-<h2 id="changing-parameters">Changing parameters<a class="anchor" aria-label="anchor" href="#changing-parameters"></a>
-</h2>
-<p>An alpha of 1 might be too much. We can dial it back with an alpha of
-0.3 and even further by dropping t to 2.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/seurat_magic.html">seurat_magic</a></span><span class="op">(</span><span class="va">seu</span>, alpha <span class="op">=</span> <span class="fl">0.3</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://satijalab.github.io/seurat-object/reference/DefaultAssay.html" class="external-link">DefaultAssay</a></span><span class="op">(</span><span class="va">seu</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"MAGIC"</span></span>
-<span><span class="fu"><a href="https://samuel-marsh.github.io/scCustomize/reference/FeaturePlot_scCustom.html" class="external-link">FeaturePlot_scCustom</a></span><span class="op">(</span><span class="va">seu</span>, <span class="st">"CD33"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="magic_files/figure-html/unnamed-chunk-3-1.png" width="100%"></p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">seu</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/seurat_magic.html">seurat_magic</a></span><span class="op">(</span><span class="va">seu</span>, alpha <span class="op">=</span> <span class="fl">0.3</span>, t <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://satijalab.github.io/seurat-object/reference/DefaultAssay.html" class="external-link">DefaultAssay</a></span><span class="op">(</span><span class="va">seu</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="st">"MAGIC"</span></span>
-<span><span class="fu"><a href="https://samuel-marsh.github.io/scCustomize/reference/FeaturePlot_scCustom.html" class="external-link">FeaturePlot_scCustom</a></span><span class="op">(</span><span class="va">seu</span>, <span class="st">"CD33"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="magic_files/figure-html/unnamed-chunk-3-2.png" width="100%"></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
