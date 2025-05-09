@@ -9,9 +9,10 @@ seurat_magic(
   assay = "RNA",
   slot = "data",
   t = 3L,
+  alpha = 1L,
   k = 30L,
   chunk = 2048L,
-  out_slot = c("magic", "new_assay"),
+  out_slot = c("new_assay", "magic"),
   verbose = TRUE
 )
 }
@@ -24,6 +25,8 @@ seurat_magic(
 \code{"counts"}, \code{"data"}, or \code{"scale.data"} (default \code{"data"}).}
 
 \item{t}{Integer(1). Diffusion time (number of steps, default \code{3}).}
+
+\item{alpha}{Numeric(1) interpolation weight in \link{0,1}}
 
 \item{k}{Integer(1). Number of neighbors to use if no graph exists (default \code{30}).}
 

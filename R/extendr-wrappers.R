@@ -22,13 +22,8 @@ getconsensus <- function(rstring, index_add) .Call(wrap__getconsensus, rstring, 
 #' @export
 align_rust <- function(rstring1, rstring2, atype, verbose) .Call(wrap__align_rust, rstring1, rstring2, atype, verbose)
 
-#' Call PCHA from R
-#'
-#' @param input_mat   numeric matrix (variables in rows, samples in columns)
-#' @param noc   integer, number of archetypes/components
-#' @return list of matrices
 #' @export
-pcha <- function(input_mat, noc) .Call(wrap__pcha, input_mat, noc)
+pcha_rust <- function(input_mat, k, c_init, s_init, max_iter_arg, conv_crit_arg) .Call(wrap__pcha_rust, input_mat, k, c_init, s_init, max_iter_arg, conv_crit_arg)
 
 
 # nolint end

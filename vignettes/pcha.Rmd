@@ -269,20 +269,89 @@ seu <- FindNeighbors(seu, dims = 1:n_pc_85, verbose = F, k.param = 5) %>% FindCl
 DimPlot(seu, reduction = "umap")
 
 X <- as.matrix(t(seu@reductions$pca@cell.embeddings[,1:n_pc_85]))
+```
+
+```{r, include = F, eval=F}
+#saveRDS(X, "temp.RDS")
+X<-readRDS("temp.RDS")
+```
+
+## Reproducibility
+
+To ensure reproducibility we can pass random starts to the rust pcha implementation from R.  Note that this is not necessary to do in normal practice.  Because slightly different solutions may be found with each run of pcha given the random starts, using R to generate random starts is one way to ensure reproducibility.  However, the random starts produced in Rust are adequate for most purposes.  One suggestion would be to calculate multiple solutions using Rust random starts and use a consensus solution.
+```{r}
+set.seed(123)
+
+# ---- 1. implement furthest_sum in R, this is done in the Rust implementation natively ----
+furthest_sum <- function(X, k, seed = NULL){
+  # X: p×n data matrix (genes × cells), but we only care about columns here
+  n <- ncol(X)
+  # precompute squared norms
+  norms2 <- colSums(X^2)
+  # pick initial seed at random if not provided
+  if (is.null(seed)) seed <- sample.int(n, 1)
+  archetypes <- integer(k)
+  archetypes[1] <- seed
+  # maintain a running "sum of distances" for each column
+  sum_dists <- numeric(n)
+  picked <- logical(n)
+  picked[seed] <- TRUE
+
+  for (j in 2:k) {
+    last <- archetypes[j - 1]
+    # distances from last seed to all columns: sqrt(||x_i||^2 + ||x_last||^2 - 2 x_i·x_last)
+    # we only need the sqrt to compare, but sum of sqrt is monotonic so we'll do it exactly:
+    dots <- crossprod(X[, last], X)    # 1×n vector of dot products
+    d2   <- norms2 + norms2[last] - 2 * as.numeric(dots)
+    sum_dists[!picked] <- sum_dists[!picked] + sqrt(d2[!picked])
+    # pick the column with max cumulative distance
+    next_seed <- which.max(ifelse(picked, -Inf, sum_dists))
+    archetypes[j] <- next_seed
+    picked[next_seed] <- TRUE
+  }
+  archetypes
+}
 
 
-ks <- 1:15
-sse <- sapply(ks, function(k) {
-  message("processing k: " , k)
-  return(pcha(X, k)$sse)
-  })
+# ---- 2. build C0 and S0 ----
+make_pcha_starts <- function(X, k, rng_seed = 1234, s_rng_seed = 5678){
+  set.seed(rng_seed)
+  seeds <- furthest_sum(X, k)
+  # C0: n×k (because Rust's ni = #columns of X)
+  C0 <- matrix(0, nrow = ncol(X), ncol = k)
+  for (j in seq_len(k)) C0[seeds[j], j] <- 1
+
+  # S0: k×n uniform → normalized columns
+  set.seed(s_rng_seed)
+  S0 <- matrix(runif(k * ncol(X)), nrow = k, ncol = ncol(X))
+  S0 <- sweep(S0, 2, colSums(S0), "/")
+
+  list(C0 = C0, S0 = S0)
+}
+
+kmax <- 15
+ks  <- 1:kmax
+starts <- lapply(ks, function(k){
+  make_pcha_starts(X, k,
+                   rng_seed   = 1000 + k,
+                   s_rng_seed = 2000 + k)
+})
+
+sse  <- sapply(seq_along(ks), function(i){
+  k  <- ks[i]
+  C0 <- starts[[i]]$C0
+  S0 <- starts[[i]]$S0
+  message("running PCHA for k=", k, " …")
+  pcha(X, k, c_init = C0, s_init = S0)$sse
+})
+
 norm_sse  <- sse / sum(X * X)                           
 kp   <- find_knee_pt(norm_sse, ks, make_plot = TRUE)
 
 cat("Optimal number of archetypes =", kp$knee_x, "\n")
 
 noc <- kp$knee_x
-res <- pcha(X, noc = noc) 
+res <- pcha(X, noc) 
 weights_df <- as.data.frame(t(res$S))     # cells × k
 colnames(weights_df) <- paste0("arch", seq_len(noc))
 
@@ -325,10 +394,10 @@ p + scale_colour_discrete(na.value = "lightgrey")
 
 
 ```{r}
-library(dplyr)
+suppressPackageStartupMessages({library(dplyr)
 library(purrr)
 library(clusterProfiler)
-library(org.Hs.eg.db)
+library(org.Hs.eg.db)})
 
 DefaultAssay(seu)<- "RNA"
 seu_spec <-seu[,!is.na(seu$specialist)]
@@ -336,7 +405,7 @@ seu_spec <-seu[,!is.na(seu$specialist)]
 marker_genes <- FindAllMarkers(seu_spec, group.by = "specialist", )
 marker_genes$diff <- abs(marker_genes$pct.1 - marker_genes$pct.2)
 
-marker_genes_filt <- marker_genes[marker_genes$p_val_adj<1e-2 & abs(marker_genes$avg_log2FC) > 2 & marker_genes$diff>0.1,]
+marker_genes_filt <- marker_genes[marker_genes$p_val_adj<5e-2 & abs(marker_genes$avg_log2FC) > 1 & marker_genes$diff>0.1,]
 
 marker_genes_filt <- marker_genes_filt[!duplicated(marker_genes_filt$gene),]
 
@@ -353,8 +422,38 @@ ccr <- compareCluster(
   readable     = TRUE
 )
 
-# a dotplot of the top GO terms per cluster:
-dotplot(ccr, showCategory=10) + ggtitle("GO BP enrichment by Archetype")
+# fix length of terms...
+shorten_terms <- function(terms, max_words = Inf, max_chars = Inf) {
+  sapply(terms, function(term) {
+    words <- strsplit(term, "\\s+")[[1]]
+    truncated <- term
+    did_trunc <- FALSE
+    
+    if (!is.infinite(max_words) && length(words) > max_words) {
+      truncated <- paste(words[1:max_words], collapse = " ")
+      did_trunc <- TRUE
+    }
+    
+    if (!is.infinite(max_chars) && nchar(truncated) > max_chars) {
+      cut_sub <- substr(truncated, 1, max_chars)
+      spaces <- gregexpr("\\s+", cut_sub)[[1]]
+      if (all(spaces == -1)) {
+        truncated <- cut_sub
+      } else {
+        last_space <- tail(spaces, 1)
+        truncated <- substr(cut_sub, 1, last_space - 1)
+      }
+      did_trunc <- TRUE
+    }
+    
+    if (did_trunc) truncated <- paste0(truncated, "...")
+    truncated
+  }, USE.NAMES = FALSE)
+}
+
+ccr@compareClusterResult$Description <- shorten_terms(ccr@compareClusterResult$Description, max_chars = 40)
+
+dotplot(ccr, showCategory=10, font.size = 8) + ggtitle("GO BP enrichment by Archetype")
 
 ```
 

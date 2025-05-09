@@ -25,6 +25,7 @@ mod magic;
 
 use crate::align::Aligner;
 use magic::diffuse_expr;            // numerical kernel
+use pcha::PchaOptions;        // PCHA options
 
 //=========================================================================//
 //  dgCMatrix  ↔︎  sprs::CsMat converters                                   //
@@ -170,39 +171,112 @@ fn test_conversion(x: Robj) -> extendr_api::Result<bool> {
     Ok(true) // explicit TRUE so tryCatch gets logical instead of NULL
 }
 
-//=========================================================================//
-//  PCHA, getconsensus, alignment bindings                                   //
-//=========================================================================//
 
-/// Call PCHA from R
-///
-/// @param input_mat   numeric matrix (variables in rows, samples in columns)
-/// @param noc   integer, number of archetypes/components
-/// @return list of matrices
 /// @export
 #[extendr]
-fn pcha(input_mat: Robj, noc: Robj) -> Robj {
-    let mat: RMatrix<f64> = input_mat.try_into().expect("`x` must be numeric matrix");
-    let noc = if let Some(v) = noc.as_real_vector() {
+fn pcha_rust(
+    input_mat: Robj,
+    k: Robj,
+    c_init: Robj,
+    s_init: Robj,
+    max_iter_arg: Robj,
+    conv_crit_arg: Robj
+) -> Robj {
+    // Convert input to Rust ndarray
+    let mat: RMatrix<f64> = input_mat
+        .try_into()
+        .expect("`input_mat` must be a numeric matrix");
+    let (nrow, ncol) = (mat.nrows(), mat.ncols());
+
+    // Parse k
+    let k = if let Some(v) = k.as_real_vector() {
+        // eprintln!("using k = {:?}; processed as real vector", k);
         v[0] as usize
-    } else if let Some(v) = noc.as_integer_vector() {
+    } else if let Some(v) = k.as_integer_vector() {
+        // eprintln!("using k = {:?}; processed as integer vector", k);
         v[0] as usize
     } else {
-        return extendr_api::Error::from("`noc` must be numeric").into();
+        panic!("`k` must be numeric or integer");
     };
-    let (nrow, ncol) = (mat.nrows(), mat.ncols());
-    assert!(noc <= ncol, "k (noc) must be ≤ ncol(x)");
+    assert!(k <= ncol, "`k` (k) must be ≤ number of columns of input_mat");
 
-    let arr = ArrayView2::from_shape((nrow, ncol).f(), mat.data()).unwrap().to_owned();
-    let res = pcha::pcha(&arr, noc, None, None, None).unwrap();
+    // Parse max_iter
+    let max_iter_arg = if let Some(v) = max_iter_arg.as_real_vector() {
+        // eprintln!("using max_iter = {:?}; processed as real vector", max_iter_arg);
+        v[0] as usize
+    } else if let Some(v) = max_iter_arg.as_integer_vector() {
+        // eprintln!("using max_iter = {:?}; processed as integer vector", max_iter_arg);
+        v[0] as usize
+    } else {
+        panic!("`max_iter` must be numeric or integer");
+    };
+    assert!(max_iter_arg > 0, "`max_iter` must be > 0");
 
+    // Parse conv_crit
+    let conv_crit_arg = if let Some(v) = conv_crit_arg.as_real_vector() {
+        // eprintln!("using conv_crit = {:?}; processed as real vector", conv_crit_arg);
+        v[0]
+    } else if let Some(v) = conv_crit_arg.as_integer_vector() {
+        // eprintln!("using conv_crit = {:?}; processed as integer vector", conv_crit_arg);
+        v[0] as f64
+    } else {
+        panic!("`conv_crit` must be numeric or integer");
+    };
+    assert!(conv_crit_arg > 0.0, "`conv_crit` must be > 0");
+    assert!(conv_crit_arg < 1.0, "`conv_crit` must be < 1");
+    assert!(conv_crit_arg.is_finite(), "`conv_crit` must be finite");
+
+    // Build the data array (p × n)
+    let arr = ArrayView2::from_shape((nrow, ncol).f(), mat.data())
+        .unwrap()
+        .to_owned();
+
+        // Build options
+    
+    let mut opts = PchaOptions::default();
+    opts.max_iter  = max_iter_arg;    // from R
+    opts.conv_crit = conv_crit_arg;   // from R
+
+    // Parse optional c_init
+    if !c_init.is_null() {
+        // Convert to Array2<f64>
+        let rmat: RMatrix<f64> = c_init
+            .try_into()
+            .expect("`c_init` must be a numeric matrix of shape (n × k)");
+        let (cr, cc) = (rmat.nrows(), rmat.ncols());
+        assert_eq!(cr, ncol, "`c_init` must have ncol(input_mat) rows");
+        assert_eq!(cc, k,     "`c_init` must have k columns");
+        opts.c_init = Some(ArrayView2::from_shape((cr, cc).f(), rmat.data())
+            .unwrap()
+            .to_owned());
+    }
+    if !s_init.is_null() {
+        // Convert to Array2<f64>
+        let rmat: RMatrix<f64> = s_init
+                .try_into()
+                .expect("`s_init` must be a numeric matrix of shape (k × n)");
+        let (sr, sc) = (rmat.nrows(), rmat.ncols());
+        assert_eq!(sr, k,    "`s_init` must have k rows");
+        assert_eq!(sc, ncol, "`s_init` must have ncol(input_mat) columns");
+        opts.s_init = Some(ArrayView2::from_shape((sr, sc).f(), rmat.data())
+                .unwrap()
+                .to_owned());
+    }
+    // Check for valid options
+    // eprintln!("⚙️  PCHA starting with max_iter={}  conv_crit={}", opts.max_iter, opts.conv_crit);
+    // Call into Rust PCHA
+    let result = pcha::pcha(&arr, k, None, None, Some(opts))
+        .expect("PCHA failed");
+
+    // Return as an R list
     list!(
-        C       = robj_matrix(&res.c),
-        S       = robj_matrix(&res.s),
-        XC      = robj_matrix(&res.xc),
-        sse     = res.sse,
-        varExpl = res.var_expl
-    ).into()
+        C       = robj_matrix(&result.c),
+        S       = robj_matrix(&result.s),
+        XC      = robj_matrix(&result.xc),
+        sse     = result.sse,
+        varExpl = result.var_expl
+    )
+    .into()
 }
 
 fn robj_matrix(a: &Array2<f64>) -> Robj {
@@ -270,268 +344,5 @@ extendr_module! {
     fn diffuse_expr_r;
     fn getconsensus;
     fn align_rust;
-    fn pcha;
+    fn pcha_rust;
 }
-
-
-// use extendr_api::prelude::*;
-// // use extendr_api::wrapper::externalptr::ExternalPtr;
-
-// mod getconsensus;
-// mod align;
-// mod pcha;
-// mod magic;
-// use crate::align::Aligner;
-// use ndarray::{Array2, ArrayView2};
-// use ndarray::ShapeBuilder;
-// use sprs::CsMat;
-// use magic::diffuse_expr;
-
-// #[extendr]
-// fn test_conversion(x: Robj) -> () {
-//     // Convert P (cells × cells)
-//     let _x_csr: sprs::CsMatBase<f64, usize, Vec<usize>, Vec<usize>, Vec<f64>> = {
-//         let csc: sprs::CsMatBase<f64, usize, Vec<usize>, Vec<usize>, Vec<f64>> = convert_dgcmatrix_to_csr(&x).unwrap(); // now cells × genes **CSR**
-//         csc
-//     };
-//     return ()
-// }
-
-// #[extendr]
-// fn diffuse_expr_r(p: Robj, x: Robj, t: i32, chunk: i32) -> extendr_api::Result<Robj> {
-//     // Convert P (cells × cells)
-//     let p_csr: sprs::CsMatBase<f64, usize, Vec<usize>, Vec<usize>, Vec<f64>> = convert_dgcmatrix_to_csr(&p)?;
-
-//     // Convert X (genes × cells) → transpose storage to CSR (cells × genes)
-//     let x_csr: sprs::CsMatBase<f64, usize, Vec<usize>, Vec<usize>, Vec<f64>> = {
-//         let csc: sprs::CsMatBase<f64, usize, Vec<usize>, Vec<usize>, Vec<f64>> = convert_dgcmatrix_to_csr(&x)?; // now cells × genes **CSR**
-//         csc
-//     };
-
-//     let out_csr: sprs::CsMatBase<f64, usize, Vec<usize>, Vec<usize>, Vec<f64>> = diffuse_expr(&p_csr, &x_csr, t as usize, chunk as usize);
-//     build_dgc_from_csr(&out_csr)
-// }
-
-// fn build_dgc_from_csr(mat: &CsMat<f64>) -> extendr_api::Result<Robj> {
-//     let csc = mat.to_other_storage();
-//     let binding = csc.indptr();
-//     let indptr: &[usize] = binding.as_slice().expect("REASON");
-//     let p_vec: Vec<i32> = indptr.iter().map(|&v| v as i32).collect();
-//     let i_vec: Vec<i32> = csc.indices().iter().map(|&x| x as i32).collect();
-//     let x_vec: Vec<f64> = csc.data().to_vec();
-
-//     let robj = list!(
-//         Dim = r!([csc.rows() as i32, csc.cols() as i32]),
-//         Dimnames = NULL,
-//         x = x_vec,
-//         i = i_vec,
-//         p = p_vec
-//     );
-//     call!("new", "dgCMatrix", robj)
-// }
-
-
-// pub fn convert_dgcmatrix_to_csr(mat: &Robj) -> extendr_api::Result<CsMat<f64>> {
-//     // 1) sanity check ---------------------------------------------------------
-//     if !mat.inherits("dgCMatrix") {
-//         return Err(Error::Other("Input must inherit from 'dgCMatrix'".into()));
-//     }
-
-//     // Convert to S4 type to access slots
-//     let s4_matrix: S4 = mat.try_into()?;
-
-//     // Extract the components of the dgCMatrix using S4 methods with error handling
-//     let i = s4_matrix.get_slot("i")
-//         .ok_or_else(|| Error::Other("Failed to get 'i' slot".into()))?
-//         .as_integer_vector()
-//         .ok_or_else(|| Error::Other("Failed to convert 'i' slot to integer vector".into()))?;
-    
-//     let p = s4_matrix.get_slot("p")
-//         .ok_or_else(|| Error::Other("Failed to get 'p' slot".into()))?
-//         .as_integer_vector()
-//         .ok_or_else(|| Error::Other("Failed to convert 'p' slot to integer vector".into()))?;
-    
-//     let x = s4_matrix.get_slot("x")
-//         .ok_or_else(|| Error::Other("Failed to get 'x' slot".into()))?
-//         .as_real_vector()
-//         .ok_or_else(|| Error::Other("Failed to convert 'x' slot to real vector".into()))?;
-    
-//     let dim = s4_matrix.get_slot("Dim")
-//         .ok_or_else(|| Error::Other("Failed to get 'Dim' slot".into()))?
-//         .as_integer_vector()
-//         .ok_or_else(|| Error::Other("Failed to convert 'Dim' slot to integer vector".into()))?;
-    
-//     if dim.len() < 2 {
-//         return Err(Error::Other("'Dim' slot must have at least 2 elements".into()));
-//     }
-    
-//     let nrows = dim[0] as usize;
-//     let ncols = dim[1] as usize;
-    
-//     // Convert R's 0-based indices to Rust vectors
-//     let row_indices: Vec<usize> = i.iter().map(|&idx| idx as usize).collect();
-//     let col_ptrs: Vec<usize> = p.iter().map(|&idx| idx as usize).collect();
-//     let values: Vec<f64> = x.iter().map(|&val| val as f64).collect();
-    
-//     // Validate dimensions
-//     if col_ptrs.len() != ncols + 1 {
-//         return Err(Error::Other(format!(
-//             "Column pointer array length ({}) should be number of columns + 1 ({})",
-//             col_ptrs.len(), ncols + 1
-//         ).into()));
-//     }
-    
-//     // Create a sparse matrix in CSC format using sprs
-//     // Using new() instead of new_checked() as it might not be available in your version
-//     let sparse_mat: sprs::CsMatBase<f64, usize, Vec<usize>, Vec<usize>, Vec<f64>> = CsMat::new(
-//         (nrows, ncols),
-//         col_ptrs,
-//         row_indices,
-//         values,
-//     );
-    
-//     Ok(sparse_mat)
-
-// }
-
-
-
-
-
-
-// /// Call PCHA from R
-// ///
-// /// @param input_mat   numeric matrix (variables in rows, samples in columns)
-// /// @param noc   integer, number of archetypes/components
-// /// @return list of matrices
-// /// @export
-// #[extendr]
-// fn pcha(input_mat: Robj, noc: Robj) -> Robj {
-//     // let input_mat = input_mat.as_matrix().unwrap();
-//     let mat: RMatrix<f64> = input_mat
-//         .try_into()
-//         .expect("`x` must be a numeric matrix");
-//     let noc = if let Some(val) = noc.as_real_vector() {
-//         val[0] as usize                // double vector
-//     } else if let Some(val) = noc.as_integer_vector() {
-//         val[0] as usize                // integer vector
-//     } else {
-//         return extendr_api::Error::from("`noc` must be numeric").into();
-//     };
-//     let nrow = mat.nrows();
-//     let ncol = mat.ncols();
-//     assert!(noc  <= ncol, "`k` ({}) must be ≤ ncol(x) ({})", noc, ncol);
-//     // R is column-major, ndarray default is row-major → use `from_shape_vec`
-//     let arr = ArrayView2::from_shape(
-//             (nrow, ncol).f(),               // .f() = column-major stride
-//             mat.data(),
-//         )
-//         .unwrap()
-//         .to_owned();                        // now an owned Array2<f64>
-    
-//     // eprintln!("input_mat: {:?}", arr);
-//     // eprintln!("noc: {:?}", noc);
-//     let result = pcha::pcha(&arr, noc, None, None, None).unwrap();
-//     let list = list!(
-//         C        = robj_matrix(&result.c),    // |I| × k
-//         S        = robj_matrix(&result.s),    // k × |U|
-//         XC       = robj_matrix(&result.xc),   // p × k
-//         sse      = result.sse,
-//         varExpl  = result.var_expl
-//     );
-//     list.into()
-// }
-
-// fn robj_matrix(a: &Array2<f64>) -> Robj {
-//     let (nrow, ncol) = a.dim();
-//     let mut data:  Vec<f64> = Vec::with_capacity(nrow * ncol);
-//     for col in a.columns() { data.extend(col); }      // col-major copy
-//     let robj = r!(data);
-//     robj.set_attrib("dim", r!([nrow as i32, ncol as i32])).unwrap();
-//     robj
-// }
-
-
-
-// /// @export
-// #[extendr]
-// fn getconsensus(rstring: Robj, index_add: Robj) -> Robj {
-//     // let rstring = "NNNNNNNNATGCGTANNNNNNNTTGACNNNNNNNN".to_string();
-//     let rstring = rstring.as_str().unwrap().to_string();
-//     let index_add = *index_add.as_real_vector().unwrap().first().unwrap() as usize;
-//     let output = getconsensus::getconsensus(rstring, index_add);
-//     output.into_iter().collect_robj()
-// }
-
-// /// @export
-// #[extendr]
-// fn align_rust(rstring1: Robj, rstring2: Robj, atype: Robj, verbose: Robj) -> Robj {
-//     // eprint!("rstring1: {:?}, rstring2: {:?}", rstring1, rstring2);
-//     let atype = atype.as_str_vector().unwrap().first().unwrap().to_string();
-//     let x = rstring1.as_str_vector().unwrap().first().unwrap().to_string().into_bytes();
-//     let y = rstring2.as_str_vector().unwrap().first().unwrap().to_string().into_bytes();
-//     let score = |a: u8, b: u8| if a == b { 1i32 } else { -1i32 };
-//     let verbose = verbose.as_logical_vector().unwrap().first().unwrap().to_bool();
-//     // gap open score: -5, gap extension score: -1
-//     let mut aligner = Aligner::with_capacity(x.len(), y.len(), -5, -1, &score);
-//     if atype=="global" {
-//         let alignment = aligner.global(&x, &y);
-//         if verbose {
-//             println!("alignment: {:?}", alignment);
-//         }
-//         return alignment.score.into_robj();
-//     } else if atype=="local" {
-//         let alignment = aligner.local(&x, &y);
-//         if verbose {
-//             println!("alignment: {:?}", alignment);
-//         }
-//         return alignment.score.into_robj();
-//     } else {
-//         let alignment = aligner.semiglobal(&x, &y);
-//         if verbose {
-//             println!("alignment: {:?}", alignment);
-//         }
-//         return alignment.score.into_robj();
-//     }
-// }
-
-// /// @export
-// #[extendr]
-// fn pretty(rstring1: Robj, rstring2: Robj, atype: Robj, verbose: Robj) {
-//     // eprint!("rstring1: {:?}, rstring2: {:?}", rstring1, rstring2);
-//     let atype = atype.as_str_vector().unwrap().first().unwrap().to_string();
-//     let x = rstring1.as_str_vector().unwrap().first().unwrap().to_string().into_bytes();
-//     let y = rstring2.as_str_vector().unwrap().first().unwrap().to_string().into_bytes();
-//     let score = |a: u8, b: u8| if a == b { 1i32 } else { -1i32 };
-//     let verbose = verbose.as_logical_vector().unwrap().first().unwrap().to_bool();
-//     // gap open score: -5, gap extension score: -1
-//     let mut aligner = Aligner::with_capacity(x.len(), y.len(), -5, -1, &score);
-//     if atype=="global" {
-//         let alignment = aligner.global(&x, &y);
-//         if verbose {
-//             println!("alignment: {:?}", alignment.pretty(&x, &y, 10));
-//         }
-//     } else if atype=="local" {
-//         let alignment = aligner.local(&x, &y);
-//         if verbose {
-//             println!("alignment: {:?}", alignment.pretty(&x, &y, 10));
-//         }
-//     } else {
-//         let alignment = aligner.semiglobal(&x, &y);
-//         if verbose {
-//             println!("alignment: {:?}", alignment.pretty(&x, &y, 10));
-//         }
-//     }
-// }
-
-// // Macro to generate exports.
-// // This ensures exported functions are registered with R.
-// // See corresponding C code in `entrypoint.c`.
-// extendr_module! {
-//     mod rustytools;
-//     fn test_conversion;
-//     fn diffuse_expr_r;
-//     fn getconsensus;
-//     fn align_rust;
-//     fn pcha;
-// }

@@ -1,5 +1,5 @@
 ---
-title: "Magic in Rust"
+title: "Magic in R and Rust"
 output:
   html_document:
     self_contained: true

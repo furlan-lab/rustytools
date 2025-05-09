@@ -1,3 +1,58 @@
+#' Principal Convex Hull Analysis via Rust PCHA
+#'
+#' Fit archetypes to your data using the fast Rust implementation of
+#' Principal Convex Hull Analysis (PCHA).  Optionally you can warm‐start
+#' the solver by providing initial \code{C} and \code{S} matrices.
+#'
+#' @param input_mat A numeric matrix of size \eqn{p\times n}, where \code{p}
+#'   is the number of features (rows) and \code{n} the number of samples.
+#' @param k Integer; the number of archetypes \eqn{k} to fit
+#'   (\code{1 <= k <= n}).
+#' @param c_init Optional numeric matrix of size \code{n x k} giving an
+#'   initial guess for the archetype coefficients \code{C}.  Pass
+#'   \code{NULL} (the default) to let PCHA pick its own seed.
+#' @param s_init Optional numeric matrix of size \code{k x n} giving an
+#'   initial guess for the cell‐to‐archetype weights \code{S}.  Pass
+#'   \code{NULL} (the default) to let PCHA pick its own seed.
+#' @param max_iter maximum number of PCHA updates (default 750)
+#' @param conv_crit convergence threshold on relative ΔSSE (default 1e-6)
+#'
+#' @return A named list with components
+#' \describe{
+#'   \item{\code{C}}{An \code{n x k} matrix of archetype coefficients.}
+#'   \item{\code{S}}{A \code{k x n} matrix of sample weights.}
+#'   \item{\code{XC}}{A \code{p x k} matrix of fitted archetype profiles.}
+#'   \item{\code{sse}}{The final residual sum‐of‐squares.}
+#'   \item{\code{varExpl}}{The fraction of variance explained,
+#'     \eqn{(SST - SSE)/SST}.}
+#' }
+#'
+#' @examples
+#' \dontrun{
+#' # simulate toy data
+#' set.seed(1)
+#' X <- matrix(rexp(60*300), nrow = 60, ncol = 300)
+#'
+#' # fit 5 archetypes
+#' res <- pcha_rust(X, k = 5)
+#'
+#' # warm‐start with C0 and S0
+#' C0 <- matrix(0, ncol(X), 5)
+#' C0[sample(ncol(X),5) + 5*seq_len(5) - 5] <- 1
+#' S0 <- matrix(runif(5*ncol(X)), 5, ncol(X))
+#' res2 <- pcha_rust(X, k = 5, c_init = C0, s_init = S0)
+#' }
+#'
+#' @export
+
+pcha <- function(input_mat, noc,
+                 c_init = NULL, s_init = NULL,
+                 max_iter = 750L, conv_crit = 1e-6) {
+  pcha_rust(input_mat, as.integer(noc),
+        c_init, s_init,
+        as.integer(max_iter), as.numeric(conv_crit))
+}
+
 #' Ordinary–least-squares line through a set of points
 #'
 #' Quick wrapper around \code{\link[stats]{lm}} that returns the slope
