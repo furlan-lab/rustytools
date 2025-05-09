@@ -75,9 +75,10 @@ and store the imputed values back into your Seurat object.</p>
 <span>  assay <span class="op">=</span> <span class="st">"RNA"</span>,</span>
 <span>  slot <span class="op">=</span> <span class="st">"data"</span>,</span>
 <span>  t <span class="op">=</span> <span class="fl">3L</span>,</span>
+<span>  alpha <span class="op">=</span> <span class="fl">1L</span>,</span>
 <span>  k <span class="op">=</span> <span class="fl">30L</span>,</span>
 <span>  chunk <span class="op">=</span> <span class="fl">2048L</span>,</span>
-<span>  out_slot <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"magic"</span>, <span class="st">"new_assay"</span><span class="op">)</span>,</span>
+<span>  out_slot <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"new_assay"</span>, <span class="st">"magic"</span><span class="op">)</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -101,6 +102,10 @@ and store the imputed values back into your Seurat object.</p>
 
 <dt id="arg-t">t<a class="anchor" aria-label="anchor" href="#arg-t"></a></dt>
 <dd><p>Integer(1). Diffusion time (number of steps, default <code>3</code>).</p></dd>
+
+
+<dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
+<dd><p>Numeric(1) interpolation weight in 0,1</p></dd>
 
 
 <dt id="arg-k">k<a class="anchor" aria-label="anchor" href="#arg-k"></a></dt>
