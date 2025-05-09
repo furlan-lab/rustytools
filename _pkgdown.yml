@@ -2,6 +2,8 @@ url: https://furlan-lab.github.io/rustytools/
 template:
   bootstrap: 5
   bootswatch: litera
+  params:
+    mathjax: TRUE
   # bslib:
   #   heading_font:
   #     google:

@@ -1,11 +1,17 @@
 ---
 title: "PCHA"
-output: html_document
+output:
+  html_document:
+    self_contained: true
+    mathjax: default
 date: "2025-05-06"
 always_allow_html: true
 editor_options: 
   chunk_output_type: console
 ---
+
+<!-- load MathJax from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 
 ## Installing Rust
 
@@ -29,8 +35,8 @@ devtools::install_github("furlan-lab/rustytools", force=T)
 | symbol                       | shape               | meaning                           |        |                              |
 | ---------------------------- | ------------------- | --------------------------------- | ------ | ---------------------------- |
 | $X\in\mathbb{R}^{p\times n}$ | variables × samples | raw data                          |        |                              |
-| $I\subseteq\{1,\dots,n\}$    | (                   | I                                 | =n\_I) | dictionary columns (“atoms”) |
-| $U\subseteq\{1,\dots,n\}$    | (                   | U                                 | =n\_U) | columns to be approximated   |
+| $I\subseteq\{1,\dots,n\}$    | (I=n\_I)            | dictionary columns (“atoms”)      |        |
+| $U\subseteq\{1,\dots,n\}$    | (U=n\_U)            | columns to be approximated        |        |
 | $k$                          | —                   | number of archetypes (components) |        |                              |
 
 We split $X = [\,X_I\;X_{\,\bar I}\,]$ and seek
@@ -171,13 +177,7 @@ or the iteration cap is hit (default 750).
 
 ---
 
-**Big picture**
-You learned a *convex-hull* factorisation that sits halfway between
-k-means (hard memberships, no convexity) and NMF/PCA (basis vectors not
-constrained to the data hull).
 
-All optimisation boils down to “gradient + project” on simplexes, with
-a few cleverly cached Gram matrices to keep the numeric cost low.
 
 
 ## Create a data set with a known archetypal structure
@@ -219,6 +219,8 @@ cat("Optimal number of archetypes =", kp$knee_x, "\n")
 First subset out the tumor
 ```{r}
 library(Seurat)
+library(ggplot2)
+library(scCustomize)
 library(magrittr)
 seu <- readRDS("~/Fred Hutch Cancer Center/Furlan_Lab - General/experiments/patient_marrows/annon/AML101/aml101.cds")
 DimPlot(seu, group.by = "seurat_clusters")
@@ -233,13 +235,46 @@ ElbowPlot(seu, ndims = 100)
 seu <- FindNeighbors(seu, dims = 1:35, verbose = F) %>% FindClusters(verbose = F) %>% RunUMAP(dims = 1:35, n.epochs = 500, verbose = F)
 DimPlot(seu)
 
+```
+
+Use some magic.
+
+```{r}
+
 seu <- seurat_magic(seu, alpha = 1)
+DefaultAssay(seu) <- "MAGIC"
+seu <- NormalizeData(seu, assay = "MAGIC") %>% ScaleData(verbose = F) %>% FindVariableFeatures(nfeatures = 5000, assay = "MAGIC", verbose = F) %>%  RunPCA(assay = "MAGIC", npcs = 100, verbose = F)
+```
 
-vf <- VariableFeatures(seu)
-X <- as.matrix(seu@assays$MAGIC@data[vf, ])
+
+Find nuber of PCs that correspond to 85% of variance
+```{r}
+# pull out the per‐PC standard deviations (as before)
+sdev <- seu@reductions$pca@stdev
+
+# compute the % variance explained by each PC
+explained_var <- sdev^2 / sum(sdev^2)
+
+# cumulative sum
+cum_var <- cumsum(explained_var)
+
+# find the first PC where cumulative ≥ 0.85
+pct_cutoff <- 0.85
+n_pc_85 <- which(cum_var >= pct_cutoff)[1]
+
+message("Using ", n_pc_85, " PCs, which explain ",
+        round(100 * cum_var[n_pc_85], 1), "% of variance.\n")
+
+# now subset your cell×PC matrix
+pcs_85 <- Embeddings(seu, "pca")[, 1:n_pc_85, drop = FALSE]
+
+seu <- FindNeighbors(seu, dims = 1:n_pc_85, verbose = F, k.param = 5) %>% FindClusters(verbose = F) %>% RunUMAP(dims = 1:n_pc_85, n.epochs = 500, verbose = F)
+DimPlot(seu, reduction = "umap")
+
+X <- as.matrix(t(seu@reductions$pca@cell.embeddings[,1:n_pc_85]))
 
 
-ks <- 1:20
+ks <- 1:15
 sse <- sapply(ks, function(k) {
   message("processing k: " , k)
   return(pcha(X, k)$sse)
@@ -254,6 +289,7 @@ res <- pcha(X, noc = noc)
 weights_df <- as.data.frame(t(res$S))     # cells × k
 colnames(weights_df) <- paste0("arch", seq_len(noc))
 
+
 # a single label: archetype with the largest weight
 seu$max_arch <- factor(
   apply(weights_df, 1L, which.max),
@@ -261,18 +297,69 @@ seu$max_arch <- factor(
   labels = paste0("Arch", seq_len(noc))
 )
 
-DimPlot(seu, group.by = "max_arch")
+DimPlot(seu, reduction = "umap", group.by = "max_arch")
 
 
-viewmastR::confusion_matrix(gt = seu$max_arch, pred = seu$seurat_clusters)
+S_df <- as.data.frame(t(res$S))
+colnames(S_df) <- paste0("Arch", seq_len(ncol(S_df)))
 
+# 2) pick your “specialist” threshold
+specialist_thresh <- 0.95
+
+
+# 3) for each cell, find if its max-weight > threshold; if so, label by archetype
+max_w   <- apply(S_df, 1, max)
+best_k  <- apply(S_df, 1, which.max)
+specialist_label <- ifelse(max_w > specialist_thresh,
+                           paste0("Arch", best_k),
+                           NA_character_)
+
+# 4) add to Seurat
+seu$specialist <- specialist_label
+
+
+p <- DimPlot(seu, reduction = "umap", group.by = "specialist")
+p + scale_colour_discrete(na.value = "lightgrey")
+
+
+```
+
+## Pathway analysis of archetype specialists
+
+
+```{r}
+library(dplyr)
+library(purrr)
+library(clusterProfiler)
+library(org.Hs.eg.db)
+
+DefaultAssay(seu)<- "RNA"
+seu_spec <-seu[,!is.na(seu$specialist)]
+# 1) For each archetype, find a “marker gene list” (here: top 200 avg. expr)
+marker_genes <- FindAllMarkers(seu_spec, group.by = "specialist", )
+marker_genes$diff <- abs(marker_genes$pct.1 - marker_genes$pct.2)
+
+marker_genes_filt <- marker_genes[marker_genes$p_val_adj<1e-2 & abs(marker_genes$avg_log2FC) > 2 & marker_genes$diff>0.1,]
+
+marker_genes_filt <- marker_genes_filt[!duplicated(marker_genes_filt$gene),]
+
+ccr <- compareCluster(
+  gene ~ cluster,
+  data         = marker_genes_filt,
+  fun          = "enrichGO",
+  OrgDb        = org.Hs.eg.db,
+  keyType      = "SYMBOL",
+  ont          = "BP",
+  pAdjustMethod= "BH",
+  pvalueCutoff = 0.05,
+  qvalueCutoff = 0.05,
+  readable     = TRUE
+)
+
+# a dotplot of the top GO terms per cluster:
+dotplot(ccr, showCategory=10) + ggtitle("GO BP enrichment by Archetype")
 
 ```
 
 
 
-
-## Appendix
-```{r Appendix}
-sessionInfo()
-```

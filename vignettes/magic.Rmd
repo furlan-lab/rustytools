@@ -1,11 +1,18 @@
 ---
 title: "Magic in Rust"
-output: html_document
+output:
+  html_document:
+    self_contained: true
+    mathjax: default
 date: "2025-05-06"
 always_allow_html: true
-editor_options: 
+editor_options:
   chunk_output_type: console
+
 ---
+<!-- load MathJax from CDN -->
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
 
 ## Installing Rust
 
@@ -48,12 +55,16 @@ Compute *k* nearest neighbours in the *m*-dimensional PCA space
 For each edge (*i*, *j*) in that graph set
 
 $$
-A_{ij}
-\;=\;
-\exp\!\Bigl[ -\tfrac{d(i,j)^2}{\sigma_i\,\sigma_j}\Bigr]
-\quad\text{and}\quad
-A_{ij}=0\;\text{if \(j\) is not a kNN of \(i\)} .
+A_{ij} \;=\; 
+\begin{cases}
+  \displaystyle
+  \exp\!\Bigl(-\frac{d(i,j)^2}{\sigma_i\,\sigma_j}\Bigr),
+    & j\in\mathrm{kNN}(i),\\[6pt]
+  0, & \text{otherwise.}
+\end{cases}
 $$
+
+
 
 Local bandwidths σᵢ make the kernel **anisotropic** so dense and sparse
 regions of the manifold are treated equally.
@@ -142,6 +153,72 @@ matrix–vector multiply are done in parallel for speed and memory
 efficiency.
 
 
+---
+
+## Blended MAGIC imputation
+
+We have added an additional lever which controls the strength of the diffusion process.
+
+Let
+
+* $X\in\mathbb{R}^{n\times g}$ be the original (cells × genes) expression matrix,
+* $P\in\mathbb{R}^{n\times n}$ the row-stochastic diffusion operator,
+* $t\in\mathbb{N}$ the number of diffusion steps,
+* $\widetilde X = P^{\,t} X$ the fully-diffused matrix,
+* $\alpha\in[0,1]$ the blending weight.
+
+We define the **blended imputation**
+
+$$
+X_{\rm imp}(\alpha)
+\;=\;
+(1 - \alpha)\,X
+\;+\;
+\alpha\,\widetilde X
+\;=\;
+(1 - \alpha)\,X
+\;+\;
+\alpha\,P^{\,t}\,X
+\;\in\mathbb{R}^{n\times g}.
+$$
+
+### Special cases
+
+* $\alpha = 0$:
+  $X_{\rm imp}(0) = X$.
+  No diffusion—returns the raw data unchanged.
+
+* $\alpha = 1$:
+  $X_{\rm imp}(1) = P^{\,t}X$.
+  Full MAGIC imputation.
+
+* $0 < \alpha < 1$:
+  Partial smoothing. Each entry is a convex combination of the raw and
+  diffused values.
+
+### Per-entry formula
+
+For each cell $i$ and gene $j$:
+
+$$
+X_{\rm imp}^{(i,j)}(\alpha)
+\;=\;(1 - \alpha)\,X^{(i,j)}
+\;+\;\alpha\sum_{k=1}^{n} \bigl[P^{\,t}\bigr]_{ik}\,X^{(k,j)}.
+$$
+
+### Interpretation
+
+* **$\alpha$** directly controls the **strength** of smoothing:
+
+  * Small $\alpha$ preserves more of the raw, per-cell expression.
+  * Large $\alpha$ favors neighborhood-averaged values.
+* Choosing $\alpha$ between 0 and 1 lets you trade off **noise reduction** vs.
+  **signal fidelity** without changing $t$ or the underlying graph.
+
+---
+
+
+
 ## How to run MAGIC in R/Rust
 
 First we take some data, subset to the tumor cells that express modest levels of CD33.  Lets see how they look after Magic.
@@ -193,116 +270,4 @@ FeaturePlot_scCustom(seu, "CD33")
 
 ```
 
-```{r, include = F, eval = F}
-# ----- prerequisites ----------------------------------------------------------
-library(Seurat)
-library(scCustomize)
-library(Matrix)
-library(rustytools)     # your package (load_all or install)
 
-library(magrittr)
-
-seu <- readRDS("~/Fred Hutch Cancer Center/Furlan_Lab - General/experiments/patient_marrows/DB1/cds/221022_DB1_seu_5p_with_cell_labels_SNF.RDS")
-seu$sb <- seu$geno %in% "0" & seu$seurat_clusters %in% c("0", "1", "2", "3", "4", "11")
-#DimPlot(seu, group.by = "sb")
-
-seu <- seu[,seu$sb]
-seu <- NormalizeData(seu, verbose = F) %>% ScaleData(verbose = F) %>% FindVariableFeatures(verbose = F) %>% RunPCA(npcs = 100, verbose = F)
-ElbowPlot(seu, ndims = 100)
-seu <- FindNeighbors(seu, dims = 1:35, verbose = F) %>% FindClusters(verbose = F) %>% RunUMAP(dims = 1:35, n.epochs = 500, verbose = F)
-DimPlot(seu)
-
-# seu <- seu[,sample(1:dim(seu)[2], 100)]
-# seu <- NormalizeData(seu) %>% ScaleData() %>% FindVariableFeatures(nfeatures = 100) %>% RunPCA(npcs = 10)
-# ElbowPlot(seu, ndims = 10)
-# seu <- FindNeighbors(seu, dims = 1:7) %>% FindClusters() %>% RunUMAP(dims = 1:7, n.epochs = 500)
-# DimPlot(seu)
-
-
-
-P <- seu@graphs$RNA_snn              # dgCMatrix, symmetric but NOT row-sum=1 yet
-if (is.null(P))
-  stop("Run FindNeighbors() first or set graph.name correctly")
-
-row_sums <- Matrix::rowSums(P)
-P <- Matrix::Diagonal(x = 1 / pmax(row_sums, 1e-12)) %*% P   # D^{-1} · A
-# P is now cells × cells, row-stochastic, still dgCMatrix
-
-# ----------------------------------------------------------------------------- #
-# 2)   Extract expression matrix (genes × cells)
-# ----------------------------------------------------------------------------- #
-# X <- seu@assays$RNA@data[VariableFeatures(seu), ]  # this is dgCMatrix, genes × cells
-X <- seu@assays$RNA@data
-dim(X)
-
-test_conversion(X)
-
-
-# ----------------------------------------------------------------------------- #
-# 3)   Diffuse  (t = 3, chunk = 512 genes at a time)
-# ----------------------------------------------------------------------------- #
-system.time({
-  comps  <- diffuse_expr_r(P, t(X), t = 3L, chunk = 512L)  # now returns list
-  X_imp  <- t(dgC_from_components(comps))
-})
-
-rownames(X_imp) <- rownames(seu[["RNA"]]@data)
-colnames(X_imp) <- colnames(seu[["RNA"]]@data)
-
-## 1.1  density (how many non-zeros)
-nnz      <- function(M) length(M@x)
-cbind(
-  nnz = c(X = nnz(X), X_imp = nnz(X_imp)),
-  density = c(nnz(X), nnz(X_imp)) / prod(dim(X))
-)
-
-lib_size_raw <- Matrix::colSums(X)
-lib_size_imp <- Matrix::colSums(X_imp)
-
-plot(lib_size_raw, lib_size_imp,
-     xlab = "raw column sum", ylab = "imputed column sum", pch = 20)
-
-rs <- Matrix::rowSums(P)
-summary(rs) 
-
-
-plot(Matrix::rowSums(X), Matrix::rowSums(X_imp),
-     xlab = "raw gene sum", ylab = "imputed gene sum", pch = 20)
-abline(0,1,col=2)
-
-library(future.apply)
-plan(multisession, workers = parallel::detectCores())
-
-chunks <- split(idx, ceiling(seq_along(idx) / 500))    # 500 genes per task
-
-cors <- unlist(future_lapply(chunks, function(rows) {
-  vapply(rows, \(g) cor(drop(X[g, ]), drop(X_imp[g, ])), 0)
-}))
-summary(cors)
-
-
-plot(
-  as.numeric(X["TMSB4X", ]), as.numeric(X_imp["TMSB4X", ]),
-  pch = 20, xlab = "raw", ylab = "imputed"
-)
-
-
-
-# On 6 k cells × ~2 k genes expect a few seconds on 8 cores.
-
-# ----------------------------------------------------------------------------- #
-# 4)   Store the imputed matrix back into Seurat
-# ----------------------------------------------------------------------------- #
-
-seum <- seu
-seum[["RNA"]]@data <- X_imp
-
-FeaturePlot_scCustom(seum, features = "CD33")
-FeaturePlot_scCustom(seu, features = "CD33")
-```
-
-
-## Appendix
-```{r Appendix}
-sessionInfo()
-```
