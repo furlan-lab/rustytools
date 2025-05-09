@@ -183,8 +183,12 @@ $$</span></p>
 A_{ij} \;=\;
 \exp\!\Bigl(-\frac{d(i,j)^2}{\sigma_i\,\sigma_j}\Bigr),
 \quad j\in\mathrm{kNN}(i).
-$$</span></p>
-<p>And here’s the zero‐otherwise case:</p>
+$$</span> ::: math A_{ij} ;=; !(-), j(i). :::</p>
+<script type="math/tex; mode=display">
+A_{ij} = 
+\exp\!\Bigl(-\frac{d(i,j)^2}{\sigma_i\,\sigma_j}\Bigr),
+\quad j\in\mathrm{kNN}(i).
+</script><p>And here’s the zero‐otherwise case:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>A</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mspace width="0.278em"></mspace><mo>=</mo><mspace width="0.278em"></mspace><mn>0</mn><mo>,</mo><mspace width="1.0em"></mspace><mi>j</mi><mo>∉</mo><mrow><mi mathvariant="normal">k</mi><mi mathvariant="normal">N</mi><mi mathvariant="normal">N</mi></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>i</mi><mo stretchy="true" form="postfix">)</mo></mrow><mi>.</mi></mrow><annotation encoding="application/x-tex">
 A_{ij} \;=\; 0,
 \quad j\not\in\mathrm{kNN}(i).
