@@ -13,10 +13,6 @@ This vignette demonstrates how to extract contiguous consensus sequence blocks f
 
 This is particularly useful for processing FASTA files derived from consensus calling pipelines (e.g., `samtools consensus`) and for downstream variant or feature annotation.
 
-```{r, eval=F}
-devtools::install_github("furlan-lab/rustytools", force = TRUE)
-```
-
 ---
 
 # Load Required Packages

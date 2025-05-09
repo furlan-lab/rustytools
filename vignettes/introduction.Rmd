@@ -13,7 +13,95 @@ editor_options:
 
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 
-# Overview
+
+# Installing Rust
+
+First you need to have an updated Rust installation. Go to this [site](https://www.rust-lang.org/tools/install) to learn how to install Rust.
+
+
+# Installing rustytools
+
+You will need to have the devtools package installed...
+
+```{r, eval=F}
+devtools::install_github("furlan-lab/rustytools")
+```
+
+## Compilation errors with openblas
+
+When building R packages that depend on BLAS/LAPACK functionality (e.g., via **openblas-src** or **RcppEigen**), you may encounter linker errors such as:
+
+```
+ld: -lto_library library filename must be 'libLTO.dylib'
+OpenBLAS build failed: Subprocess returns with non-zero status: 2
+```
+
+These errors typically arise because **openblas-src** is attempting to compile OpenBLAS from source using a GCC-fortran toolchain that injects a `-lto_library` flag incompatible with the Apple linker. However, the **openblas-src** crate in Rust or package builds in R defaults to building its own copy of OpenBLAS, invoking `gcc`/`gfortran` and ultimately passing `-lto_library` to `ld`.
+
+Because Apple’s `ld` expects `-lto_library libLTO.dylib` (not `-lto_library /usr/local/...`), the link step fails.
+
+Alternatively you may have non-standard installation sites of openblas, such as those on high-performance clusters.
+
+You have a few options..
+
+### Setting Environment Variables Permanently
+
+**Use this approach for building from a cloned repo of rustytools if you encounter openblas errors**
+
+#### User-level `.Renviron`
+
+Create or edit `~/.Renviron` so that the variables are always available, even in non-interactive sessions (e.g., `R CMD INSTALL`, RStudio Build pane):
+
+```bash
+# On Apple Silicon:
+export OPENBLAS_DIR=/opt/homebrew/opt/openblas
+# On Intel Macs:
+export OPENBLAS_DIR=/usr/local/opt/openblas
+```
+
+> **Restart R or RStudio** after modifying `~/.Renviron`.
+
+To verify in R:
+
+```r
+Sys.getenv("OPENBLAS_DIR")     # should print "/opt/homebrew/opt/openblas" or "/usr/local/opt/openblas"
+```
+### Project-level `.Renviron`
+
+If you prefer to scope this configuration to a single package project, put a file named `.Renviron` in your package root:
+
+```bash
+# On Apple Silicon:
+export OPENBLAS_DIR=/opt/homebrew/opt/openblas
+# On Intel Macs:
+export OPENBLAS_DIR=/usr/local/opt/openblas
+```
+
+### Providing openblas location specifically
+
+**Use this approach for installing rustytools from devtools if you encounter openblas errors**
+
+From within R
+
+```{r, eval=F}
+Sys.setenv("OPENBLAS_DIR"="/openblas_location")
+Sys.setenv("OPENBLAS_DIR"="/usr/local/opt/openblas")
+# On Apple Silicon this is typically: opt/homebrew/opt/openblas
+# On Intel Macs this is typically: /usr/local/opt/openblas
+# On an HPC this might be something like: /app/software/OpenBLAS/0.3.27-GCC-13.3.0
+Sys.setenv(
+  OPENBLAS_VENDOR = "system",
+  OPENBLAS_DIR    = "/usr/local/opt/openblas"
+)
+devtools::install_github("furlan-lab/rustytools")
+
+withr::with_envvar(c(OPENBLAS_DIR    = "/usr/local/opt/openblas"),
+  devtools::install_github("furlan-lab/rustytools")
+)
+```
+
+
+# Overview of Sequence Alignment
 
 This vignette introduces the `align()` function from the `rustytools` package, which provides a Rust-backed, high-performance implementation of the Smith-Waterman algorithm. This algorithm supports global, local, semiglobal, and fully custom alignment modes using affine gap penalties.
 
