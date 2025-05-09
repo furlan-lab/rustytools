@@ -1,5 +1,5 @@
 <hr>
-<p align="left"><img src="man/figures/rustytools.png" alt="" width="200"></a></p>
+<p align="left"><img src="man/figures/rustytools.png" alt="" width="300"></a></p>
 <hr>
 
 [![Project Status: Active – The project has reached a stable, usable state and is being activelydeveloped.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
