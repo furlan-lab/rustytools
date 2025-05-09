@@ -1,7 +1,9 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://furlan-lab.github.io/rustytools/404.html</loc></url>
 <url><loc>https://furlan-lab.github.io/rustytools/LICENSE.html</loc></url>
+<url><loc>https://furlan-lab.github.io/rustytools/articles/getConsensus.html</loc></url>
 <url><loc>https://furlan-lab.github.io/rustytools/articles/index.html</loc></url>
+<url><loc>https://furlan-lab.github.io/rustytools/articles/introduction.html</loc></url>
 <url><loc>https://furlan-lab.github.io/rustytools/articles/magic.html</loc></url>
 <url><loc>https://furlan-lab.github.io/rustytools/articles/pcha.html</loc></url>
 <url><loc>https://furlan-lab.github.io/rustytools/articles/seqAlign.html</loc></url>
