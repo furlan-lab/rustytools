@@ -1,1 +1,8 @@
 OPENBLAS_DIR=/opt/homebrew/opt/openblas
+
+# On Apple Silicon this is typically: /opt/homebrew/opt/openblas
+#OPENBLAS_DIR=/opt/homebrew/opt/openblas
+# On Intel Macs this is typically: /usr/local/opt/openblas
+#OPENBLAS_DIR=/opt/homebrew/opt/openblas
+# On an HPC this might be something like: /app/software/OpenBLAS/0.3.27-GCC-13.3.0
+#OPENBLAS_DIR=/app/software/OpenBLAS/0.3.27-GCC-13.3.0
