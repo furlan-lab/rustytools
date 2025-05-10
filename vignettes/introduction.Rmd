@@ -36,24 +36,55 @@ ld: -lto_library library filename must be 'libLTO.dylib'
 OpenBLAS build failed: Subprocess returns with non-zero status: 2
 ```
 
+or
+
+```
+ thread 'main' panicked at /private/var/folders/63/z3dzfmg53g31179qxhwt5cq00000gn/T/RtmpIhMjfg/R.INSTALL17d5e6ffc8bf0/rustytools/src/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/openblas-src-0.10.11/build.rs:218:13:
+  OpenBLAS build failed: Subprocess returns with non-zero status: 2
+```
+
 These errors typically arise because **openblas-src** is attempting to compile OpenBLAS from source using a GCC-fortran toolchain that injects a `-lto_library` flag incompatible with the Apple linker. However, the **openblas-src** crate in Rust or package builds in R defaults to building its own copy of OpenBLAS, invoking `gcc`/`gfortran` and ultimately passing `-lto_library` to `ld`.
 
 Because Apple’s `ld` expects `-lto_library libLTO.dylib` (not `-lto_library /usr/local/...`), the link step fails.
 
 Alternatively you may have non-standard installation sites of openblas, such as those on high-performance clusters.
 
-You have a few options..
+At the moment, we have found only one foolproof method of compilation.
 
-### Setting Environment Variables Permanently
 
-**Use this approach for building from a cloned repo of rustytools if you encounter openblas errors**
+First, make sure you have [openblas](http://www.openmathlib.org/OpenBLAS/) installed on your system.
+Second, clone rustytools in a shell in a directory you would like to install the source file i.e.:
+
+```
+cd yourdir/
+git clone https://github.com/furlan-lab/rustytools.git
+
+```
+
+Then you have a few options
+
+#### Easiest - declare system variable, then install repo
+
+```
+OPENBLAS_DIR=/your_openblas_dir
+
+export OPENBLAS_DIR=/opt/homebrew/opt/openblas
+# On Apple Silicon this is typically: /opt/homebrew/opt/openblas
+# On Intel Macs this is typically: /usr/local/opt/openblas
+# On an HPC this might be something like: /app/software/OpenBLAS/0.3.27-GCC-13.3.0
+```
+
+Then compile rustytools
+```
+R CMD install rustytools
+```
+
 
 #### User-level `.Renviron`
 
 Create or edit `~/.Renviron` so that the variables are always available, even in non-interactive sessions (e.g., `R CMD INSTALL`, RStudio Build pane):
 
 ```bash
-# On Apple Silicon:
 export OPENBLAS_DIR=/opt/homebrew/opt/openblas
 # On Intel Macs:
 export OPENBLAS_DIR=/usr/local/opt/openblas
