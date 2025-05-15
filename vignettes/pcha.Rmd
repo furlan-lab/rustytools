@@ -174,7 +174,7 @@ library(rustytools)
 ### Toy data with a known archetypal structure
 set.seed(42)
 p  <- 60            # genes
-n  <- 300           # cells
+n  <- 500           # cells
 k0 <- 5             # ground-truth archetypes
 
 # 1. ground-truth archetype matrix A (p × k0)
@@ -184,7 +184,7 @@ alpha <- matrix(rexp(k0 * n, 1), k0, n)
 S     <- sweep(alpha, 2, colSums(alpha), "/")
 # 3. generate data with small noise
 X <- A %*% S + matrix(rgamma(p * n, shape = 1, rate = 50), p, n)
-
+#dim(X)
 ```
 
 # Finding optimal number of archetypes
@@ -193,12 +193,52 @@ First we set a number of k to iterate through.  Using the future library we can 
 
 ```{r}
 
-ks <- 1:10
-sse <- sapply(ks, function(k) pcha(X, k)$sse)
+ks <- 3:8
+microbenchmark::microbenchmark(sse <- sapply(ks, function(k) pcha(X, k)$sse), times = 5)
+```
+
+```{r}
 norm_sse  <- sse / sum(X * X)                           
 kp   <- find_knee_pt(norm_sse, ks, make_plot = TRUE)
 cat("Optimal number of archetypes =", kp$knee_x, "\n")
 ```
+
+
+We can compare the performance of our rust implementation to the paretoTI package (note that this uses python and requires reticulate).  We see a modest gain in performance using rust
+```{r}
+suppressPackageStartupMessages({library(ParetoTI)})
+microbenchmark::microbenchmark(sse <- sapply(ks, function(k) {
+  res = py_PCHA$PCHA(X, noc = as.integer(k), conv_crit = 1e-6, maxiter = 750)
+  res[[4]]}), times=5)
+```
+
+
+```{r}
+
+norm_sse  <- sse / sum(X * X)                        
+kp   <- find_knee_pt(norm_sse, ks, make_plot = TRUE)
+cat("Optimal number of archetypes =", kp$knee_x, "\n")
+
+noc<-5
+res <- fit_pch(X, noc = noc, maxiter = 750, normalise_var = F, conv_crit = 1e-6)
+data_dim = seq(1, noc - 1)
+
+
+hull_vol = fit_convhulln(X[data_dim, ], positions = FALSE)
+archetypes = res$XC[data_dim, ]
+data_arc = cbind(archetypes, generate_data(archetypes,  N_examples = 20, jiiter = 0, size = 1))
+arc_vol = fit_convhulln(data_arc, positions = FALSE)
+arc_vol = arc_vol$vol
+
+archetypes2 = res$XC[data_dim, ]
+arch_red = archetypes2 - archetypes2[, noc]
+arc_vol = abs(Matrix::det(arch_red[, seq_len(noc - 
+                1)])/factorial(noc - 1))
+hull_vol = hull_vol$vol
+t_ratio = arc_vol/hull_vol
+
+```
+
 
 ## What does this look like in single cell RNA sequencing data
 
@@ -508,7 +548,7 @@ set.seed(42)
 ## 1. Generate toy 3-D data from 4 “ground-truth” archetypes
 p  <- 3    # dims
 n  <- 5000  # samples
-k0 <- 10    # true archetypes
+k0 <- 5   # true archetypes
 
 # ground-truth vertices A (3×4)
 A <- matrix(runif(p*k0, 0, 1), p, k0)
@@ -569,7 +609,7 @@ library(geometry)
 
 set.seed(42)
 p  <- 3     # 3 dims
-n  <- 2000   # samples
+n  <- 3000   # samples
 k0 <- 4     # true archetypes
 
 # 1) simulate ground‐truth archetypes A and mixing S
@@ -625,3 +665,71 @@ p3d
 
 
 ```
+
+
+
+
+```{r}
+# install.packages(c("plotly","geometry","rustytools"))
+library(rustytools)
+library(plotly)
+library(geometry)
+
+set.seed(42)
+## 1. Generate toy 3-D data from 4 “ground-truth” archetypes
+p  <- 3    # dims
+n  <- 5000  # samples
+k0 <- 5   # true archetypes
+
+# ground-truth vertices A (3×4)
+A <- matrix(runif(p*k0, 0, 1), p, k0)
+
+# random convex combinations S_true (4×200)
+alpha    <- matrix(runif(k0*n), k0, n)
+S_true   <- sweep(alpha, 2, colSums(alpha), "/")
+
+# data plus a bit of gaussian noise
+X <- A %*% S_true + matrix(rnorm(p*n, sd = 0.02), p, n)
+dim(X)
+## 2. Run PCHA
+res <- pcha(X, k0)
+res2 <- fit_pch(X, noc = k0)
+#res <- pcha(X, 3)
+XC  <- res$XC   # p × k0  (the recovered archetypes in original space)
+
+## 3. Build plotly 3D scatter + hull
+pts   <- t(X)      # n×3
+verts <- t(XC)     # k0×3
+
+# compute convex‐hull of the archetype points
+hull_idx <- convhulln(verts)  # each row is a triangle of vertex‐indices
+
+plot_ly() %>%
+  # raw data points
+  add_markers(x = pts[,1], y = pts[,2], z = pts[,3],
+              marker = list(size = 2, color = 'black'),
+              name = "Data") %>%
+
+  # the hull mesh
+  add_mesh(x = verts[,1], y = verts[,2], z = verts[,3],
+           i = hull_idx[,1]-1,  # convert to zero-based
+           j = hull_idx[,2]-1,
+           k = hull_idx[,3]-1,
+           opacity = 0.3,
+           color = 'lightblue',
+           name = "Archetype hull") %>%
+
+  # archetype vertices
+  add_markers(x = verts[,1], y = verts[,2], z = verts[,3],
+              marker = list(size = 6, color = 'red'),
+              name = "Archetypes") %>%
+
+  layout(scene = list(
+    xaxis = list(title = "Dim 1"),
+    yaxis = list(title = "Dim 2"),
+    zaxis = list(title = "Dim 3")
+  ))
+
+```
+
+

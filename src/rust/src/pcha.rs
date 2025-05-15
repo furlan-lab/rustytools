@@ -8,7 +8,47 @@ use ndarray_rand::RandomExt;
 use ndarray_rand::rand::{distributions::Uniform, thread_rng, Rng};
 use std::error::Error;
 use rayon::prelude::*;
-// use ndarray::linalg::Dot;
+// use ndarray::Array2;
+use qhull::
+use qhull::{Qhull, QhError};      // the crate exposes exactly these
+use factorial::Factorial;         // adds .factorial() on unsigned ints
+use qhull::{Qhull, QhullError};
+use nalgebra::{DMatrix, LU};
+
+// ---------------------------------------------------------------------------
+// Simplex volume of the k archetypes (last dim = archetype columns)
+// ---------------------------------------------------------------------------
+pub fn simplex_volume(arch: &Array2<f64>) -> Option<f64> {
+    let (d, k) = arch.dim();
+    if k < 2 || k > d + 1 {
+        return None;          // need 2..=d+1 points for a full-dim simplex
+    }
+
+    // translate so that last column is the origin, then build d×(k-1) matrix
+    let base = arch.column(k - 1).to_owned();
+    let m    = arch
+        .columns(0, k - 1)
+        .map_axis(ndarray::Axis(0), |col| col - &base)
+        .reversed_axes();                // nalgebra expects row-major
+
+    // determinant of (k-1)×(k-1) Gram matrix gives squared volume * k!^2
+    // simpler: volume = |det(M)| / (k-1)!
+    let lu = LU::new(DMatrix::from_row_slice(d, k - 1, m.as_slice().unwrap()));
+    let det = lu.determinant();
+    let vol = det.abs() / (k - 1).factorial();     // tiny helper below
+    Some(vol)
+}
+
+/// factorial for usize → f64 (tiny helper)
+trait Factorial {
+    fn factorial(self) -> f64;
+}
+impl Factorial for usize {
+    fn factorial(self) -> f64 {
+        (1..=self).fold(1.0, |acc, v| acc * v as f64)
+    }
+}
+
 
 /// Optional parameters controlling the optimisation.
 #[derive(Debug, Clone)]
@@ -33,6 +73,9 @@ pub struct PchaResult {
     pub c:  Array2<f64>,   // |I| × noc
     pub sse: f64,          // final residual SSE
     pub var_expl: f64,     // (SST – SSE)/SST
+    pub hull_vol:  Option<f64>, 
+    pub arc_vol:   Option<f64>,  
+    pub t_ratio:   Option<f64>, 
 }
 
 // -----------------------------------------------------------------------------
@@ -145,8 +188,19 @@ pub fn pcha(
     c  = reorder_columns(&c, &order);
     s  = reorder_rows(&s, &order);
     xc = reorder_columns(&xc, &order);
+    let hull_vol  = convex_hull_volume(&x_u);
+    let arc_vol   = simplex_volume(&xc);
+    let t_ratio   = match (arc_vol, hull_vol) {
+        (Some(a), Some(h)) if h > 0.0 => Some(a / h),
+        _                            => None,
+    };
 
-    Ok(PchaResult { xc, s, c, sse, var_expl })
+    Ok(PchaResult {
+        xc, s, c, sse, var_expl,
+        hull_vol,
+        arc_vol,
+        t_ratio,
+    })
 }
 
 // -----------------------------------------------------------------------------
@@ -362,6 +416,31 @@ fn furthest_sum(k: &Array2<f64>, noc: usize, seed: usize, exclude: &[usize]) -> 
         ind_t = best;
     }
     arche
+}
+
+
+/// Return the volume of the convex hull of the columns of `m`
+///
+/// `m` is p×n (double precision).  If Qhull cannot construct a hull
+/// (e.g. n < p+1 or all points co–planar) we return `None`.
+fn convex_hull_volume(m: &Array2<f64>) -> Option<f64> {
+    // qhull wants Vec<[f64;3]> etc.  Work on column vectors.
+    let p = m.nrows();
+    let n = m.ncols();
+    if p < 2 || n < p + 1 {
+        return None;
+    }
+    // pack column-major → Vec<Vec<f64>>
+    let mut pts: Vec<Vec<f64>> = Vec::with_capacity(n);
+    for c in m.columns() {
+        pts.push(c.to_vec());
+    }
+    // run qhull
+    match Qhull::from_points(&pts) {
+        Ok(hull) => Some(hull.volume()),
+        Err(QhError::Degenerate) | Err(QhError::Singular) => None,
+        Err(e) => panic!("qhull failed: {:?}", e),
+    }
 }
 
 // -----------------------------------------------------------------------------
