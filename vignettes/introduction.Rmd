@@ -61,12 +61,12 @@ git clone https://github.com/furlan-lab/rustytools.git
 
 ```
 
-Then you have a few options
+Then you have a few options:
 
 #### Easiest - declare system variable, then install repo
 
 ```
-OPENBLAS_DIR=/your_openblas_dir
+export OPENBLAS_DIR=/your_openblas_dir
 
 export OPENBLAS_DIR=/opt/homebrew/opt/openblas
 # On Apple Silicon this is typically: /opt/homebrew/opt/openblas
@@ -76,30 +76,13 @@ export OPENBLAS_DIR=/opt/homebrew/opt/openblas
 
 Then compile rustytools
 ```
-R CMD install rustytools
+cd rustytools
+R CMD install .
 ```
 
-
-#### User-level `.Renviron`
-
-Create or edit `~/.Renviron` so that the variables are always available, even in non-interactive sessions (e.g., `R CMD INSTALL`, RStudio Build pane):
-
-```bash
-export OPENBLAS_DIR=/opt/homebrew/opt/openblas
-# On Intel Macs:
-export OPENBLAS_DIR=/usr/local/opt/openblas
-```
-
-> **Restart R or RStudio** after modifying `~/.Renviron`.
-
-To verify in R:
-
-```r
-Sys.getenv("OPENBLAS_DIR")     # should print "/opt/homebrew/opt/openblas" or "/usr/local/opt/openblas"
-```
 ### Project-level `.Renviron`
 
-If you prefer to scope this configuration to a single package project, put a file named `.Renviron` in your package root:
+Edit the file named `.Renviron` in your package root:
 
 ```bash
 # On Apple Silicon:
@@ -108,28 +91,30 @@ export OPENBLAS_DIR=/opt/homebrew/opt/openblas
 export OPENBLAS_DIR=/usr/local/opt/openblas
 ```
 
-### Providing openblas location specifically
 
-**Use this approach for installing rustytools from devtools if you encounter openblas errors**
+#### User-level `.Renviron`
 
-From within R
+Create/edit `~/.Renviron` so that the variables are always available, even in non-interactive sessions (e.g., `R CMD INSTALL`, RStudio Build pane):
 
-```{r, eval=F}
-Sys.setenv("OPENBLAS_DIR"="/openblas_location")
-Sys.setenv("OPENBLAS_DIR"="/usr/local/opt/openblas")
-# On Apple Silicon this is typically: opt/homebrew/opt/openblas
-# On Intel Macs this is typically: /usr/local/opt/openblas
-# On an HPC this might be something like: /app/software/OpenBLAS/0.3.27-GCC-13.3.0
-Sys.setenv(
-  OPENBLAS_VENDOR = "system",
-  OPENBLAS_DIR    = "/usr/local/opt/openblas"
-)
-devtools::install_github("furlan-lab/rustytools")
-
-withr::with_envvar(c(OPENBLAS_DIR    = "/usr/local/opt/openblas"),
-  devtools::install_github("furlan-lab/rustytools")
-)
+```bash
+export OPENBLAS_DIR=/opt/homebrew/opt/openblas
+# On Intel Macs:
+export OPENBLAS_DIR=/usr/local/opt/openblas
 ```
+
+#### Changing error message
+
+If the nature of the error message changes to something like that seen below, delete the target directory in rustytools repo and try again
+
+```
+		cargo build --lib --release --manifest-path=./rust/Cargo.toml --target-dir ./rust/target
+   Compiling openblas-src v0.10.11
+   Compiling lax v0.15.0
+error: could not find native static library `openblas`, perhaps an -L flag is missing?
+
+error: could not compile `openblas-src` (lib) due to 1 previous error
+```
+
 
 
 # Overview of Sequence Alignment

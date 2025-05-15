@@ -377,6 +377,60 @@ p + scale_colour_discrete(na.value = "lightgrey")
 
 ```
 
+
+
+## T ratio
+```{r}
+library(geometry)   # for convhulln()
+
+
+simplex_volume <- function(verts){
+  # verts: d × k matrix of k vertices in R^d
+  k <- ncol(verts)
+  if(k < 2) return(0)
+  M <- verts[, -1, drop=FALSE] - verts[, 1]
+  Gm <- crossprod(M)             # Gram matrix (k-1)×(k-1)
+  sqrt(abs(det(Gm))) / factorial(k-1)
+}
+
+compute_t_ratio <- function(X, k, ..., centre = TRUE){
+  # X: d×n (e.g. your top‐12‐PCs matrix)
+  res   <- pcha(X, k, ...)
+  XC    <- res$XC   # d×k
+  if(centre){
+    X  <- X  - rowMeans(X)
+    XC <- XC - rowMeans(XC)
+  }
+  V_poly  <- simplex_volume(XC)
+  hull_all <- convhulln(t(X), options="FA")
+  V_hull  <- hull_all$vol
+  list(t_ratio     = V_poly / V_hull,
+       polytopeVol = V_poly,
+       hullVol     = V_hull,
+       pcha        = res)
+}
+
+
+obs5 <- compute_t_ratio(X, 5, max_iter = 20, conv_crit = 1e-2)
+print(obs5$t_ratio)
+
+# 3) null distribution by shuffling columns of X:
+set.seed(123)
+B <- 1000
+null_tr <- replicate(B, {
+  X_shuf <- pc_mat[, sample(ncol(pc_mat))]
+  compute_t_ratio(X_shuf, 5, max_iter=100, conv_crit=1e-3)$t_ratio
+})
+
+pval <- mean(null_tr >= obs5$t_ratio)
+cat("Empirical p-value for k=5:", pval, "\n")
+
+
+
+
+```
+
+
 ## Pathway analysis of archetype specialists
 
 
@@ -444,5 +498,130 @@ dotplot(ccr, showCategory=10, font.size = 8) + ggtitle("GO BP enrichment by Arch
 
 ```
 
+```{r}
+# install.packages(c("plotly","geometry","rustytools"))
+library(rustytools)
+library(plotly)
+library(geometry)
+
+set.seed(42)
+## 1. Generate toy 3-D data from 4 “ground-truth” archetypes
+p  <- 3    # dims
+n  <- 5000  # samples
+k0 <- 10    # true archetypes
+
+# ground-truth vertices A (3×4)
+A <- matrix(runif(p*k0, 0, 1), p, k0)
+
+# random convex combinations S_true (4×200)
+alpha    <- matrix(runif(k0*n), k0, n)
+S_true   <- sweep(alpha, 2, colSums(alpha), "/")
+
+# data plus a bit of gaussian noise
+X <- A %*% S_true + matrix(rnorm(p*n, sd = 0.02), p, n)
+
+## 2. Run PCHA
+res <- pcha(X, k0)
+#res <- pcha(X, 3)
+XC  <- res$XC   # p × k0  (the recovered archetypes in original space)
+
+## 3. Build plotly 3D scatter + hull
+pts   <- t(X)      # n×3
+verts <- t(XC)     # k0×3
+
+# compute convex‐hull of the archetype points
+hull_idx <- convhulln(verts)  # each row is a triangle of vertex‐indices
+
+plot_ly() %>%
+  # raw data points
+  add_markers(x = pts[,1], y = pts[,2], z = pts[,3],
+              marker = list(size = 2, color = 'black'),
+              name = "Data") %>%
+
+  # the hull mesh
+  add_mesh(x = verts[,1], y = verts[,2], z = verts[,3],
+           i = hull_idx[,1]-1,  # convert to zero-based
+           j = hull_idx[,2]-1,
+           k = hull_idx[,3]-1,
+           opacity = 0.3,
+           color = 'lightblue',
+           name = "Archetype hull") %>%
+
+  # archetype vertices
+  add_markers(x = verts[,1], y = verts[,2], z = verts[,3],
+              marker = list(size = 6, color = 'red'),
+              name = "Archetypes") %>%
+
+  layout(scene = list(
+    xaxis = list(title = "Dim 1"),
+    yaxis = list(title = "Dim 2"),
+    zaxis = list(title = "Dim 3")
+  ))
+
+```
 
 
+```{r}
+# install.packages(c("rustytools","plotly","geometry"))
+library(rustytools)
+library(plotly)
+library(geometry)
+
+set.seed(42)
+p  <- 3     # 3 dims
+n  <- 2000   # samples
+k0 <- 4     # true archetypes
+
+# 1) simulate ground‐truth archetypes A and mixing S
+A <- matrix(rexp(p * k0, 1), p, k0)
+alpha <- matrix(rexp(k0 * n, 1), k0, n)
+S_true <- sweep(alpha, 2, colSums(alpha), "/")
+X <- A %*% S_true + matrix(rnorm(p * n, sd = 0.05), p, n)
+
+# 2) fit PCHA
+res <- pcha(X, k0)
+
+# 3) identify specialists
+S <- res$S           # k0 × n
+max_w     <- apply(S, 2, max)
+best_arch <- apply(S, 2, which.max)
+is_spec   <- max_w > 0.85
+
+# 4) get point‐cloud and archetype coordinates
+pts <- t(X)          # n × 3
+arch <- t(res$XC)    # k0 × 3
+
+# 5) compute convex‐hull faces on the archetypes
+hull_faces <- convhulln(arch, options = "Qt")  # a m×3 matrix of 1‐based indices
+
+# 6) build the 3D plot
+p3d <- plot_ly() %>%
+  # point cloud, colored by specialist or not  
+  add_markers(x = pts[,1], y = pts[,2], z = pts[,3],
+              color = ifelse(is_spec, paste0("Arch", best_arch), "other"),
+              colors = c("red","blue","green","purple","grey80"),
+              marker = list(size = 3),
+              hoverinfo = 'none') %>%
+  # overlay the convex‐hull mesh of the archetypes
+  add_mesh(x = arch[,1], y = arch[,2], z = arch[,3],
+             i = hull_faces[,1]-1,   # plotly wants 0‐based
+             j = hull_faces[,2]-1,
+             k = hull_faces[,3]-1,
+             opacity = 0.3,
+             color = 'black',
+             name = 'Archetype hull') %>%
+  # add the archetype vertices
+  add_markers(x = arch[,1], y = arch[,2], z = arch[,3],
+              marker = list(size=6, color='black', symbol='diamond'),
+              name = 'Archetypes') %>%
+  layout(scene = list(
+    xaxis = list(title = "Dim 1"),
+    yaxis = list(title = "Dim 2"),
+    zaxis = list(title = "Dim 3")
+  ))
+
+p3d
+
+
+
+```
