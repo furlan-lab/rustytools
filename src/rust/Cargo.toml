@@ -11,9 +11,13 @@ name = 'rustytools'
 [dependencies]
 extendr-api = '*'
 bio-types = ">=0.12"
-ndarray        = { version = "0.16", features = ["blas"] }
+# ndarray        = { version = "0.16", features = ["blas"] }
+ndarray  = "0.16"
+ndarray-linalg =  "0.17"
 ndarray-rand   = "0.15"
 rand           = "0.8"
-rayon = "*"
+rayon = "1"
 sprs = "*"
-ndarray-linalg = { version = "0.15", features = ["openblas-static"] } 
+qhull = "0.4.0"
+ndarray-stats = "0.5"
+# ndarray-linalg = { version = "0.17", features = ["openblas"] } 

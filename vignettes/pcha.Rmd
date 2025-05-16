@@ -193,12 +193,33 @@ First we set a number of k to iterate through.  Using the future library we can 
 
 ```{r}
 
-ks <- 1:10
-sse <- sapply(ks, function(k) pcha(X, k)$sse)
+ks <- 3:10
+pcha(X, 5)
+
+microbenchmark::microbenchmark(sse <- sapply(ks, function(k) pcha(X, k)$sse), times = 5)
 norm_sse  <- sse / sum(X * X)                           
 kp   <- find_knee_pt(norm_sse, ks, make_plot = TRUE)
 cat("Optimal number of archetypes =", kp$knee_x, "\n")
 ```
+
+
+
+We can compare the performance of our rust implementation to the paretoTI package (note that this uses python and requires reticulate).  We see a modest gain in performance using rust
+```{r}
+ParetoTI::install_py_pcha(method = "virtualenv", overwrite_env = T)
+suppressPackageStartupMessages({library(ParetoTI)})
+library(reticulate)
+use_python("/Users/sfurlan/.virtualenvs/reticulate/bin/python")
+#use_python("/Users/sfurlan/micromamba/envs/reticulate_scanpy/bin/python")
+py_config()
+fit_pch(X, noc = as.integer(5), conv_crit = 1e-6, maxiter = 750)
+microbenchmark::microbenchmark(sse <- sapply(ks, function(k) {
+  res = py_PCHA$PCHA(X, noc = as.integer(k), conv_crit = 1e-6, maxiter = 750)
+  res[[4]]}), times=5)
+```
+
+
+
 
 ## What does this look like in single cell RNA sequencing data
 
