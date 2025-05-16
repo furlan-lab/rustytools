@@ -9,7 +9,6 @@ use ndarray_rand::rand::{distributions::Uniform, thread_rng, Rng};
 use std::error::Error;
 use rayon::prelude::*;
 // use ndarray::Array2;
-use qhull::
 use qhull::{Qhull, QhError};      // the crate exposes exactly these
 use factorial::Factorial;         // adds .factorial() on unsigned ints
 use qhull::{Qhull, QhullError};

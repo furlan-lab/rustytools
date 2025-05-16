@@ -19,3 +19,4 @@ sprs = "*"
 ndarray-linalg = { version = "0.17.0", features = ["openblas"] } 
 nalgebra = { version = "0.33.2", features = ["std"] }
 qhull = "0.4.0"
+factorial = { version = "0.3.0", features = ["rayon"] }

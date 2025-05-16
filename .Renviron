@@ -1,6 +1,6 @@
-export OPENBLAS_DIR=/usr/local/opt/openblas
+export OPENBLAS_DIR=/opt/homebrew/opt/openblas
 export OPENBLAS_NUM_THREADS=16    # or number of cores you want to use
-export LD_LIBRARY_PATH=/usr/local/opt/openblas/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$OPENBLAS_DIR/lib:$LD_LIBRARY_PATH
 # On Apple Silicon this is typically: /opt/homebrew/opt/openblas
 #OPENBLAS_DIR=/opt/homebrew/opt/openblas
 # On Intel Macs this is typically: /usr/local/opt/openblas
