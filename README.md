@@ -8,7 +8,7 @@
 
 # Welcome to `rustytools`
 
-Version 0.0.2
+Version 0.0.3
 
 `rustytools` is a high-performance bioinformatics toolkit that integrates Rust-based computational kernels into R. It provides fast and memory-efficient implementations of common algorithms used in genomics and single-cell analysis, with a focus on speed, safety, and interoperability.
 

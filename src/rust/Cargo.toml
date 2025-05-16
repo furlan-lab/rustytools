@@ -1,7 +1,7 @@
 [package]
 name = 'rustytools'
 publish = false
-version = '0.0.2'
+version = '0.0.3'
 edition = '2021'
 
 [lib]
@@ -20,4 +20,4 @@ rayon = "1"
 sprs = "*"
 qhull = "0.4.0"
 ndarray-stats = "0.5"
-# ndarray-linalg = { version = "0.17", features = ["openblas"] } 
+# ndarray-linalg = { version = "0.17", features = ["openblas"] }
