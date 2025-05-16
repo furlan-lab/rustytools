@@ -33,6 +33,9 @@ pub struct PchaResult {
     pub c:  Array2<f64>,   // |I| × noc
     pub sse: f64,          // final residual SSE
     pub var_expl: f64,     // (SST – SSE)/SST
+    // pub hull_vol: Option<f64>,
+    // pub arch_vol: Option<f64>,
+    // pub t_ratio:  Option<f64>,
 }
 
 // -----------------------------------------------------------------------------
@@ -146,8 +149,22 @@ pub fn pcha(
     s  = reorder_rows(&s, &order);
     xc = reorder_columns(&xc, &order);
 
-    Ok(PchaResult { xc, s, c, sse, var_expl })
+    Ok(PchaResult {
+        xc, s, c, sse, var_expl
+    })
 }
+
+    // let hull_vol = hull_volume(&x_u);
+    // let arch_vol = hull_volume(&xc);
+    // let t_ratio   = match (hull_vol, arch_vol) {
+    //     (Some(h), Some(a)) if h > 0.0 => Some(a / h),
+    //     _                             => None,
+    // };
+
+    // Ok(PchaResult {
+    //     xc, s, c, sse, var_expl,
+    //     hull_vol, arch_vol, t_ratio,
+    // })
 
 // -----------------------------------------------------------------------------
 // helpers
@@ -364,5 +381,59 @@ fn furthest_sum(k: &Array2<f64>, noc: usize, seed: usize, exclude: &[usize]) -> 
     arche
 }
 
+use qhull::QhBuilder;   // <-- correct types
+use ndarray::s;
+use ndarray_linalg::Determinant;
+use qhull::Vertex;
+
+/// Return the volume of the convex hull of `points` (p × n matrix).
+/// `None` → hull is degenerate or has < p + 1 points.
+pub fn _hull_volume(points: &Array2<f64>) -> Option<f64> {
+    let (p, n) = points.dim();
+    if p < 2 || n < p + 1 {
+        return None;
+    }
+
+    // --- 1. Flat buffer for qhull (column-major like ndarray) ------------
+    let mut buf: Vec<f64> = Vec::with_capacity(p * n);
+    for col in 0..n {
+        buf.extend(points.slice(s![.., col]).iter());
+    }
+
+    // --- 2. Build the hull ------------------------------------------------
+    let hull = match QhBuilder::default().build(p, &mut buf) {
+        Ok(h) => h,
+        Err(e) => panic!("qhull failed: {e:?}"),
+    };
+
+    // --- 3. Centroid as interior reference point -------------------------
+    let centroid: Array1<f64> = points.mean_axis(Axis(1)).unwrap();
+
+    // --- 4. Sum simplex volumes over facets ------------------------------
+    let fact = (1..=p).product::<usize>() as f64;           // p!
+    let mut vol = 0.0_f64;
+    for facet in hull.facets() {
+        // 1. unwrap the Option and turn the Set into a Vec
+    let verts_idx: Vec<Vertex> = facet
+        .vertices()          // -> Option<Set<'_, Vertex<'_>>>
+        .unwrap()            // skip non-simplicial
+        .iter()              // &Set   → iterator over &Vertex
+        // .cloned()            // &Vertex → Vertex (copy the handle)
+        .collect();          // iterator → Vec<Vertex>
+        if verts_idx.len() != p { continue; }          // need exactly p vertices
+
+        // 2. use the collected Vec for indexing
+        let mut m = Array2::<f64>::zeros((p, p));
+        for (k, vtx) in verts_idx.iter().enumerate() {
+            // vtx.point() -> &[f64]
+            let vk = Array1::from(vtx.point()?.to_vec());
+            m.column_mut(k).assign(&(&vk - &centroid));
+        }
+        let det = m.det().unwrap();
+        vol += det.abs() / fact;
+    }
+
+    (vol > 0.0).then_some(vol)
+}
 // -----------------------------------------------------------------------------
 // end of file

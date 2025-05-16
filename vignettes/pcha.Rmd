@@ -173,9 +173,9 @@ or the iteration cap is hit (default 750).
 library(rustytools)
 ### Toy data with a known archetypal structure
 set.seed(42)
-p  <- 60            # genes
-n  <- 300           # cells
-k0 <- 5             # ground-truth archetypes
+p  <- 100            # features
+n  <- 3000           # cases
+k0 <- 6             # ground-truth archetypes
 
 # 1. ground-truth archetype matrix A (p × k0)
 A <- matrix(rexp(p * k0, 1), p, k0)
@@ -193,12 +193,43 @@ First we set a number of k to iterate through.  Using the future library we can 
 
 ```{r}
 
-ks <- 1:10
-sse <- sapply(ks, function(k) pcha(X, k)$sse)
+ks <- 3:8
+microbenchmark::microbenchmark(sse <- sapply(ks, function(k) pcha(X, k)$sse), times = 3)
+```
+
+```{r}
 norm_sse  <- sse / sum(X * X)                           
 kp   <- find_knee_pt(norm_sse, ks, make_plot = TRUE)
 cat("Optimal number of archetypes =", kp$knee_x, "\n")
 ```
+
+
+We can compare the performance of our rust implementation to the paretoTI package (note that this uses python and requires reticulate).  We see a slight gain in performance... Even a slight loss would still be worth it not to have to deal with python in R
+```{r}
+library(reticulate)
+use_python("/Users/sfurlan/.virtualenvs/reticulate/bin/python")
+suppressWarnings(suppressPackageStartupMessages({library(ParetoTI)}))
+microbenchmark::microbenchmark(sse <- sapply(ks, function(k) {
+  res = py_PCHA$PCHA(X, noc = as.integer(k), conv_crit = 1e-6, maxiter = 750)
+  res[[4]]}), times=3)
+```
+
+```{r}
+norm_sse  <- sse / sum(X * X)                           
+kp   <- find_knee_pt(norm_sse, ks, make_plot = TRUE)
+cat("Optimal number of archetypes =", kp$knee_x, "\n")
+```
+
+## T ratio
+
+To obtain the t-ratio we can run the pcha algorithm using the argument calc_t_ratio set to true (is false by default).  The calculation of t-ratio is done in R and therefore not including in the Rust/Python bakeoff above.
+```{r}
+
+tratios <- sapply(ks, function(k) pcha(X, k, calc_t_ratio = T)$t_ratio)
+kp   <- find_knee_pt(tratios, ks, make_plot = TRUE)
+```
+
+
 
 ## What does this look like in single cell RNA sequencing data
 

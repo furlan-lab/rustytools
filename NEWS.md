@@ -9,3 +9,7 @@
 # rustytools v0.0.2
 
 * pcha
+
+# rustytools v0.0.3
+
+* pcha modifications including t-ratio calculation

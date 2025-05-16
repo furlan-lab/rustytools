@@ -1,4 +1,4 @@
-OPENBLAS_DIR=/opt/homebrew/opt/openblas
+# OPENBLAS_DIR=/opt/homebrew/opt/openblas
 
 # On Apple Silicon this is typically: /opt/homebrew/opt/openblas
 #OPENBLAS_DIR=/opt/homebrew/opt/openblas
