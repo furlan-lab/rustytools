@@ -214,7 +214,7 @@ microbenchmark::microbenchmark(sse <- sapply(ks, function(k) {
 
 
 ```{r}
-
+library(geo)
 norm_sse  <- sse / sum(X * X)                        
 kp   <- find_knee_pt(norm_sse, ks, make_plot = TRUE)
 cat("Optimal number of archetypes =", kp$knee_x, "\n")

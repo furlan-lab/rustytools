@@ -8,10 +8,11 @@ use ndarray_rand::RandomExt;
 use ndarray_rand::rand::{distributions::Uniform, thread_rng, Rng};
 use std::error::Error;
 use rayon::prelude::*;
+use qhull::Qh::{Qhull, QhError};      // the crate exposes exactly these
 // use ndarray::Array2;
-use qhull::{Qhull, QhError};      // the crate exposes exactly these
-use factorial::Factorial;         // adds .factorial() on unsigned ints
-use qhull::{Qhull, QhullError};
+// use qhull::{Qhull, QhError};      // the crate exposes exactly these
+// use factorial::Factorial;         // adds .factorial() on unsigned ints
+// use qhull::{Qhull, QhullError};
 use nalgebra::{DMatrix, LU};
 
 // ---------------------------------------------------------------------------
@@ -39,10 +40,10 @@ pub fn simplex_volume(arch: &Array2<f64>) -> Option<f64> {
 }
 
 /// factorial for usize → f64 (tiny helper)
-trait Factorial {
+trait FactorialT {
     fn factorial(self) -> f64;
 }
-impl Factorial for usize {
+impl FactorialT for usize {
     fn factorial(self) -> f64 {
         (1..=self).fold(1.0, |acc, v| acc * v as f64)
     }
