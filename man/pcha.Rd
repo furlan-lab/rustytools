@@ -10,7 +10,8 @@ pcha(
   c_init = NULL,
   s_init = NULL,
   max_iter = 750L,
-  conv_crit = 1e-06
+  conv_crit = 1e-06,
+  calc_t_ratio = F
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ initial guess for the cell‐to‐archetype weights \code{S}.  Pass
 \item{max_iter}{maximum number of PCHA updates (default 750)}
 
 \item{conv_crit}{convergence threshold on relative ΔSSE (default 1e-6)}
+
+\item{calc_t_ratio}{Boolean; should t-ratio be calculated}
 
 \item{k}{Integer; the number of archetypes \eqn{k} to fit
 (\code{1 <= k <= n}).}
@@ -63,5 +66,4 @@ C0[sample(ncol(X),5) + 5*seq_len(5) - 5] <- 1
 S0 <- matrix(runif(5*ncol(X)), 5, ncol(X))
 res2 <- pcha_rust(X, k = 5, c_init = C0, s_init = S0)
 }
-
 }
