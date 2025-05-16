@@ -170,6 +170,9 @@ or the iteration cap is hit (default 750).
 ## Create a data set with a known archetypal structure
 
 ```{r}
+library(remotes)
+install_github("furlan-lab/rustytools", force = T)
+
 library(rustytools)
 ### Toy data with a known archetypal structure
 set.seed(42)
@@ -204,7 +207,7 @@ cat("Optimal number of archetypes =", kp$knee_x, "\n")
 ```
 
 
-We can compare the performance of our rust implementation to the paretoTI package (note that this uses python and requires reticulate).  We see a slight gain in performance... Even a slight loss would still be worth it not to have to deal with python in R
+We can compare the performance of our rust implementation to the paretoTI package (note that this uses python and requires reticulate).  We see a slight gain in performance... Even a slight loss would still be worth it not to have to deal with python in R.  Although Rust implementation could be optimized further by using openblas libraries, this resulting in mounting compilation issues across different devices so we are sufficiently satisfied with current performance.
 ```{r}
 library(reticulate)
 use_python("/Users/sfurlan/.virtualenvs/reticulate/bin/python")

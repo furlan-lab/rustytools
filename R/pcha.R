@@ -148,7 +148,7 @@ seg_err <- function(x, y, brk) {
 #'
 #' @importFrom ggplot2 ggplot geom_line geom_point geom_vline labs theme_bw aes
 #' @export
-find_knee_pt <- function(y, x = seq_along(y), make_plot = FALSE) {
+find_knee_pt <- function(y, x = seq_along(y), make_plot = FALSE, y_axis = "Relative SSE") {
   stopifnot(length(y) >= 3L,
             length(x) == length(y))
 
@@ -168,7 +168,7 @@ find_knee_pt <- function(y, x = seq_along(y), make_plot = FALSE) {
       ggplot2::geom_vline(xintercept = x[brk],
                           colour = "red", linetype = "dashed") +
       ggplot2::labs(x = "Number of archetypes (k)",
-                    y = "Relative SSE",
+                    y = y_axis,
                     title = "Elbow detected by knee_pt()") +
       ggplot2::theme_bw()
     print(g)
