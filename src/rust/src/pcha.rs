@@ -33,9 +33,9 @@ pub struct PchaResult {
     pub c:  Array2<f64>,   // |I| × noc
     pub sse: f64,          // final residual SSE
     pub var_expl: f64,     // (SST – SSE)/SST
-    pub hull_vol: Option<f64>,
-    pub arch_vol: Option<f64>,
-    pub t_ratio:  Option<f64>,
+    // pub hull_vol: Option<f64>,
+    // pub arch_vol: Option<f64>,
+    // pub t_ratio:  Option<f64>,
 }
 
 // -----------------------------------------------------------------------------
@@ -149,18 +149,22 @@ pub fn pcha(
     s  = reorder_rows(&s, &order);
     xc = reorder_columns(&xc, &order);
 
-    let hull_vol = hull_volume(&x_u);
-    let arch_vol = hull_volume(&xc);
-    let t_ratio   = match (hull_vol, arch_vol) {
-        (Some(h), Some(a)) if h > 0.0 => Some(a / h),
-        _                             => None,
-    };
-
     Ok(PchaResult {
-        xc, s, c, sse, var_expl,
-        hull_vol, arch_vol, t_ratio,
+        xc, s, c, sse, var_expl
     })
 }
+
+    // let hull_vol = hull_volume(&x_u);
+    // let arch_vol = hull_volume(&xc);
+    // let t_ratio   = match (hull_vol, arch_vol) {
+    //     (Some(h), Some(a)) if h > 0.0 => Some(a / h),
+    //     _                             => None,
+    // };
+
+    // Ok(PchaResult {
+    //     xc, s, c, sse, var_expl,
+    //     hull_vol, arch_vol, t_ratio,
+    // })
 
 // -----------------------------------------------------------------------------
 // helpers
@@ -384,7 +388,7 @@ use qhull::Vertex;
 
 /// Return the volume of the convex hull of `points` (p × n matrix).
 /// `None` → hull is degenerate or has < p + 1 points.
-pub fn hull_volume(points: &Array2<f64>) -> Option<f64> {
+pub fn _hull_volume(points: &Array2<f64>) -> Option<f64> {
     let (p, n) = points.dim();
     if p < 2 || n < p + 1 {
         return None;

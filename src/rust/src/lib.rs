@@ -274,10 +274,7 @@ fn pcha_rust(
         S       = robj_matrix(&result.s),
         XC      = robj_matrix(&result.xc),
         sse     = result.sse,
-        varExpl = result.var_expl,
-        hull_vol = result.hull_vol,
-        arch_vol = result.arch_vol,
-        t_ratio =  result.t_ratio  
+        varExpl = result.var_expl
     )
     .into()
 }
