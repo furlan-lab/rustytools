@@ -44,29 +44,60 @@
 #' }
 #' @importFrom geometry convhulln
 #' @export
-
+#'
 pcha <- function(input_mat, noc,
                  c_init = NULL, s_init = NULL,
                  max_iter = 750L, conv_crit = 1e-6, calc_t_ratio=F) {
-  res <- pcha_rust(input_mat, as.integer(noc),
-        c_init, s_init,
-        as.integer(max_iter), as.numeric(conv_crit))
   if(!calc_t_ratio){
-    return(res)
+    return(pcha_rust(input_mat, as.integer(noc),
+                     c_init, s_init,
+                     as.integer(max_iter), as.numeric(conv_crit)))
   } else {
+    res <- pcha_rust(input_mat, as.integer(noc),
+              c_init, s_init,
+              as.integer(max_iter), as.numeric(conv_crit))
     data_dim = seq(1, noc - 1)
-    #hull_vol = fit_convhulln(input_mat[data_dim, ], positions = FALSE)
-    hull_vol <- convhulln(t(X[data_dim,]), options = "FA")$vol
+    hull_vol <- convhulln(t(input_mat[data_dim,]), options = "FA")$vol
     archetypes = res$XC[data_dim, ]
     data_arc = cbind(archetypes, generate_data(archetypes,  N_examples = 20, jiiter = 0, size = 1))
-    arc_vol = fit_convhulln(data_arc, positions = FALSE)$vol
+    arc_vol = convhulln(t(data_arc), options = "FA")$vol
     res$t_ratio = arc_vol/hull_vol
     return(res)
-    # arch_red = archetypes - archetypes[, noc]
-    # arc_vol = abs(Matrix::det(arch_red[, seq_len(noc -
-    #                                                1)])/factorial(noc - 1))
-    # t_ratio2 = arc_vol/hull_vol
   }
+}
+#
+# pcha <- function(input_mat, noc,
+#                  c_init = NULL, s_init = NULL,
+#                  max_iter = 750L, conv_crit = 1e-6, calc_t_ratio=F, use_rust_t_ratio=T) {
+#   if(use_rust_t_ratio){
+#     return(pcha_rust(input_mat, as.integer(noc),
+#                      c_init, s_init,
+#                      as.integer(max_iter), as.numeric(conv_crit), calc_t_ratio))
+#   } else {
+#     res <- pcha_rust(input_mat, as.integer(noc),
+#               c_init, s_init,
+#               as.integer(max_iter), as.numeric(conv_crit), calc_t_ratio=F)
+#     data_dim = seq(1, noc - 1)
+#     hull_vol <- convhulln(t(input_mat[data_dim,]), options = "FA")$vol
+#     archetypes = res$XC[data_dim, ]
+#     data_arc = cbind(archetypes, generate_data(archetypes,  N_examples = 20, jiiter = 0, size = 1))
+#     arc_vol = convhulln(t(data_arc), options = "FA")$vol
+#     res$t_ratio = arc_vol/hull_vol
+#     return(res)
+#   }
+# }
+
+#' @keywords internal
+generate_data <- function (archetypes, N_examples = 10000, jiiter = 0.1, size = 1)
+{
+  n_arc = ncol(archetypes)
+  weights = matrix(runif(N_examples * n_arc, 0, 1), N_examples,
+                   n_arc)
+  weights = (weights/rowSums(weights)) * size
+  noise = matrix(rnorm(N_examples * n_arc, 0, jiiter), N_examples,
+                 n_arc)
+  weights = weights + noise
+  t(weights %*% t(archetypes))
 }
 
 #' Ordinary–least-squares line through a set of points

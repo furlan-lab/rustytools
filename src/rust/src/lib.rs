@@ -180,7 +180,8 @@ fn pcha_rust(
     c_init: Robj,
     s_init: Robj,
     max_iter_arg: Robj,
-    conv_crit_arg: Robj
+    conv_crit_arg: Robj,
+    // calc_t_ratio: Robj,
 ) -> Robj {
     // Convert input to Rust ndarray
     let mat: RMatrix<f64> = input_mat
@@ -188,6 +189,12 @@ fn pcha_rust(
         .expect("`input_mat` must be a numeric matrix");
     let (nrow, ncol) = (mat.nrows(), mat.ncols());
 
+    // Check for valid input
+    // let calc_t_ratio = if let Some(v) = calc_t_ratio.as_logical_vector() {
+    //     v[0].to_bool()
+    // } else {
+    //     panic!("`calc_t_ratio` must be logical");
+    // };
     // Parse k
     let k = if let Some(v) = k.as_real_vector() {
         // eprintln!("using k = {:?}; processed as real vector", k);
@@ -265,16 +272,18 @@ fn pcha_rust(
     // Check for valid options
     // eprintln!("⚙️  PCHA starting with max_iter={}  conv_crit={}", opts.max_iter, opts.conv_crit);
     // Call into Rust PCHA
+    // let result = pcha::pcha(&arr, k, None, None, Some(opts), calc_t_ratio)
+    //     .expect("PCHA failed");
     let result = pcha::pcha(&arr, k, None, None, Some(opts))
         .expect("PCHA failed");
-
     // Return as an R list
     list!(
         C       = robj_matrix(&result.c),
         S       = robj_matrix(&result.s),
         XC      = robj_matrix(&result.xc),
         sse     = result.sse,
-        varExpl = result.var_expl
+        varExpl = result.var_expl,
+        // t_ratio = result.t_ratio,
     )
     .into()
 }

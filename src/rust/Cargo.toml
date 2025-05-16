@@ -18,6 +18,6 @@ ndarray-rand   = "0.15"
 rand           = "0.8"
 rayon = "1"
 sprs = "*"
-qhull = "0.4.0"
+# qhull = "0.4.0"
 ndarray-stats = "0.5"
 # ndarray-linalg = { version = "0.17", features = ["openblas"] }
