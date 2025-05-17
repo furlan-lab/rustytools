@@ -4,7 +4,7 @@
 \alias{find_knee_pt}
 \title{Locate the “elbow” of a monotone curve}
 \usage{
-find_knee_pt(y, x = seq_along(y), make_plot = FALSE)
+find_knee_pt(y, x = seq_along(y), make_plot = FALSE, y_axis = "Relative SSE")
 }
 \arguments{
 \item{y}{Numeric vector of \eqn{y}-values (must have ≥ 3 points).}
