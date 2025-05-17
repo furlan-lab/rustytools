@@ -15,6 +15,8 @@
 
 // use core::num;
 
+// use core::num;
+
 use extendr_api::prelude::*;
 use ndarray::{Array2, ArrayView2, ShapeBuilder};
 use sprs::CsMat;
@@ -287,6 +289,7 @@ fn pcha_rust(
     let mut opts = PchaOptions::default();
     opts.max_iter  = max_iter_arg;    // from R
     opts.conv_crit = conv_crit_arg;   // from R
+    opts.num_cores   = number_of_cores; // from R
 
     // Parse optional c_init
     if !c_init.is_null() {

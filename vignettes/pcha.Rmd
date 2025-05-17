@@ -198,7 +198,7 @@ First we set a number of k to iterate through.  Using the future library we can 
 
 ks <- 3:8
 microbenchmark::microbenchmark(sse <- sapply(ks, function(k) pcha(X, k,)$sse), times = 1)
-microbenchmark::microbenchmark(sse <- sapply(ks, function(k) pcha(X, k, num_cores = 8)$sse), times = 1)
+microbenchmark::microbenchmark(sse <- sapply(ks, function(k) pcha(X, k, num_cores = 16)$sse), times = 1)
 ```
 
 ```{r}

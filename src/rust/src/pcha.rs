@@ -8,6 +8,7 @@ use ndarray_rand::RandomExt;
 use ndarray_rand::rand::{distributions::Uniform, thread_rng, Rng};
 use std::error::Error;
 use rayon::prelude::*;
+use rayon::ThreadPoolBuilder;
 // use qhull::QhBuilder;   // <-- correct types
 // use ndarray::s;
 // use ndarray_linalg::Determinant;
@@ -22,10 +23,11 @@ pub struct PchaOptions {
     pub delta: f64,        // ℓ₁ relaxation on C (0 → exact simplex)
     pub c_init: Option<Array2<f64>>, // optional initial C (|I| × k)
     pub s_init: Option<Array2<f64>>, // optional initial S (k × |U|)
+    pub num_cores: usize
 }
 impl Default for PchaOptions {
     fn default() -> Self {
-        Self { max_iter: 750, conv_crit: 0.000001, delta: 0.0, c_init: None, s_init: None }
+        Self { max_iter: 750, conv_crit: 0.000001, delta: 0.0, c_init: None, s_init: None, num_cores: 1 }
     }
 }
 
@@ -64,6 +66,11 @@ pub fn pcha(
 
     let sst = x_u.mapv(|v| v * v).sum();
 
+    eprintln!("Using {} core(s)", opts.num_cores);
+    let _ = ThreadPoolBuilder::new()
+        .num_threads(opts.num_cores)
+        .build()
+        .expect("Failed to build thread pool");
     // ---- initialise C -------------------------------------------------------
     let mut c: Array2<f64> = if let Some(init) = opts.c_init.take() {
         init
