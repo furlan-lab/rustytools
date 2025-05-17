@@ -23,7 +23,7 @@ getconsensus <- function(rstring, index_add) .Call(wrap__getconsensus, rstring, 
 align_rust <- function(rstring1, rstring2, atype, verbose) .Call(wrap__align_rust, rstring1, rstring2, atype, verbose)
 
 #' @export
-pcha_rust <- function(input_mat, k, c_init, s_init, max_iter_arg, conv_crit_arg) .Call(wrap__pcha_rust, input_mat, k, c_init, s_init, max_iter_arg, conv_crit_arg)
+pcha_rust <- function(input_mat, k, c_init, s_init, max_iter_arg, conv_crit_arg, number_of_threads) .Call(wrap__pcha_rust, input_mat, k, c_init, s_init, max_iter_arg, conv_crit_arg, number_of_threads)
 
 
 # nolint end

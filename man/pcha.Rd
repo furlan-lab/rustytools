@@ -11,7 +11,8 @@ pcha(
   s_init = NULL,
   max_iter = 750L,
   conv_crit = 1e-06,
-  calc_t_ratio = F
+  calc_t_ratio = F,
+  num_cores = 1
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ initial guess for the cell‐to‐archetype weights \code{S}.  Pass
 \item{conv_crit}{convergence threshold on relative ΔSSE (default 1e-6)}
 
 \item{calc_t_ratio}{Boolean; should t-ratio be calculated}
+
+\item{num_cores}{Integer; number of cores to be used by rayon in Rust}
 
 \item{k}{Integer; the number of archetypes \eqn{k} to fit
 (\code{1 <= k <= n}).}

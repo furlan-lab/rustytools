@@ -17,6 +17,7 @@
 #' @param max_iter maximum number of PCHA updates (default 750)
 #' @param conv_crit convergence threshold on relative ΔSSE (default 1e-6)
 #' @param calc_t_ratio Boolean; should t-ratio be calculated
+#' @param num_cores Integer; number of cores to be used by rayon in Rust
 #' @return A named list with components
 #' \describe{
 #'   \item{\code{C}}{An \code{n x k} matrix of archetype coefficients.}
@@ -47,15 +48,15 @@
 #'
 pcha <- function(input_mat, noc,
                  c_init = NULL, s_init = NULL,
-                 max_iter = 750L, conv_crit = 1e-6, calc_t_ratio=F) {
+                 max_iter = 750L, conv_crit = 1e-6, calc_t_ratio=F, num_cores = 1) {
   if(!calc_t_ratio){
     return(pcha_rust(input_mat, as.integer(noc),
                      c_init, s_init,
-                     as.integer(max_iter), as.numeric(conv_crit)))
+                     as.integer(max_iter), as.numeric(conv_crit), num_cores))
   } else {
     res <- pcha_rust(input_mat, as.integer(noc),
               c_init, s_init,
-              as.integer(max_iter), as.numeric(conv_crit))
+              as.integer(max_iter), as.numeric(conv_crit), num_cores)
     data_dim = seq(1, noc - 1)
     hull_vol <- convhulln(t(input_mat[data_dim,]), options = "FA")$vol
     archetypes = res$XC[data_dim, ]
@@ -209,3 +210,116 @@ find_knee_pt <- function(y, x = seq_along(y), make_plot = FALSE, y_axis = "Relat
        idx         = brk,
        error_curve = errs)
 }
+
+
+#' Empirical t-ratio test of PCHA polytopes (Korem et al., 2015)
+#'
+#' For a fixed number of archetypes \eqn{k}, fits PCHA to the data,
+#' computes the *t*-ratio (ratio between the volume of the archetype
+#' polytope and the convex hull of the data projected to
+#' \eqn{k-1} dimensions), and estimates a one-tailed empirical
+#' \eqn{p}-value by comparing the observed statistic to the
+#' distribution obtained from \code{B} shuffled data sets
+#' (row-wise permutations; see Korem \emph{et al.}, Cell 2015).
+#'
+#' @param X  A numeric \eqn{p \times n} matrix
+#'           (variables / genes in rows, samples / cells in columns).
+#' @param k  Integer \eqn{\ge 3}. Number of archetypes to test.
+#' @param B  Integer \eqn{\ge 1}. Number of bootstrap / shuffle
+#'           repetitions.  Default \code{1000}.
+#' @param shuffle_fun  A function that takes \code{X} and returns a
+#'           shuffled version; the default independently permutes every
+#'           row, destroying correlations while preserving univariate
+#'           distributions.
+#' @param cores  How many parallel workers to use (via
+#'           \link[future]{plan}).  Set to \code{1L} to run sequentially.
+#'           Default: all physical cores detected.
+#' @param ...  Additional arguments passed **unchanged** to
+#'           \code{rustytools::\link[rustytools:pcha]{pcha}} – e.g.,
+#'           \code{max_iter}, \code{conv_crit}, or custom initialisations.
+#'
+#' @return A list with components
+#'   \describe{
+#'     \item{\code{tratio}}{Observed *t*-ratio.}
+#'     \item{\code{p_empirical}}{Empirical one-tailed \eqn{p}-value.}
+#'     \item{\code{boot_tratios}}{Numeric vector of length \code{B}
+#'           with bootstrap statistics (invisibly).}
+#'   }
+#'
+#' @examples
+#' \dontrun{
+#' set.seed(1)
+#' p  <- 60; n <- 300; k0 <- 5
+#' A  <- matrix(rexp(p * k0),  p, k0)
+#' S  <- apply(matrix(rexp(k0 * n), k0, n), 2, `/`, sum)
+#' X  <- A %*% S + matrix(rgamma(p * n, 1, 50), p, n)
+#'
+#' out <- t_ratio_test(X, k = 5, B = 200, max_iter = 300)
+#' out$tratio
+#' out$p_empirical
+#' }
+#'
+#' @importFrom rustytools pcha
+#' @importFrom geometry convhulln
+#' @importFrom progressr handlers with_progress progressor
+#' @export
+t_ratio_test <- function(X, k,
+                         B = 1000,
+                         shuffle_fun = function(mat)
+                           apply(mat, 1L, sample),
+                         cores = parallel::detectCores(logical = FALSE),
+                         ...) {
+
+  stopifnot(is.matrix(X),
+            is.numeric(k), length(k) == 1L, k >= 3, k <= ncol(X),
+            B >= 1L)
+
+  #─ progress-bar setup ────────────────────────────────────────────────────
+  progressr::handlers(progressr::handler_txtprogressbar(
+    format = ":spin :current/:total [:bar] :percent  ETA: :eta"
+  ))
+  p <- progressr::progressor(steps = B + 1L)    # +1 for observed fit
+
+  #─ helper for one PCHA fit + t-ratio computation ────────────────────────
+  single_tratio <- function(mat) {
+    res      <- rustytools::pcha(mat, k, ...)$XC
+    proj_idx <- seq_len(k - 1L)
+    hull_v   <- geometry::convhulln(t(mat[proj_idx, , drop = FALSE]),
+                                    options = "FA")$vol
+    arch     <- t(res[proj_idx, , drop = FALSE])
+    jitter   <- arch + matrix(runif((k - 1) * 20, -1e-6, 1e-6),
+                              ncol = k - 1)
+    arch_v   <- geometry::convhulln(rbind(arch, jitter),
+                                    options = "FA")$vol
+    arch_v / hull_v
+  }
+
+  #─ 1. observed statistic ────────────────────────────────────────────────
+  t_obs <- single_tratio(X); p()
+
+  #─ 2. bootstrap / shuffle distribution ─────────────────────────────────
+  if (cores > 1L) {
+    future::plan(future::multisession, workers = cores)
+    boot <- progressr::with_progress(
+      future.apply::future_sapply(seq_len(B), function(i) {
+        p(); single_tratio(shuffle_fun(X))
+      }, future.seed = TRUE)
+    )
+    future::plan(future::sequential)
+  } else {
+    boot <- progressr::with_progress(
+      vapply(seq_len(B), function(i) { p(); single_tratio(shuffle_fun(X)) },
+             numeric(1))
+    )
+  }
+
+  #─ 3. empirical p-value ────────────────────────────────────────────────
+  p_emp <- (sum(boot >= t_obs) + 1) / (B + 1)   # unbiased estimate
+
+  structure(list(tratio        = t_obs,
+                 p_empirical   = p_emp,
+                 boot_tratios  = boot),
+            class = "pcha_tratio_test")
+}
+
+

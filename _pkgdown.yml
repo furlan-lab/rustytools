@@ -53,11 +53,12 @@ reference:
   contents:
   - align
   - pcha
-  - rustytools-package
+  - t_ratio_test
   - get_consensus
   - find_knee_pt
   - dgC_from_components
   - seurat_magic
+  - rustytools-package
 articles:
 - title: Introduction
   navbar: Introduction

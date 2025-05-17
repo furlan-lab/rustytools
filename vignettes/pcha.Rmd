@@ -170,17 +170,17 @@ or the iteration cap is hit (default 750).
 ## Create a data set with a known archetypal structure
 
 ```{r}
-library(remotes)
-install_github("furlan-lab/rustytools", force = T)
+# library(remotes)
+# install_github("furlan-lab/rustytools", force = T)
 
 library(rustytools)
 ### Toy data with a known archetypal structure
 set.seed(42)
 p  <- 100            # features
 n  <- 3000           # cases
-k0 <- 6             # ground-truth archetypes
+k0 <- 5             # ground-truth archetypes
 
-# 1. ground-truth archetype matrix A (p × k0)
+# 1. ground-truth archetype matrix A (p × k0)d
 A <- matrix(rexp(p * k0, 1), p, k0)
 # 2. sample coefficients S on the simplex
 alpha <- matrix(rexp(k0 * n, 1), k0, n)
@@ -197,8 +197,8 @@ First we set a number of k to iterate through.  Using the future library we can 
 ```{r}
 
 ks <- 3:8
-sse <- sapply(ks, function(k) pcha(X, k, calc_t_ratio = T)$sse)
-microbenchmark::microbenchmark(sse <- sapply(ks, function(k) pcha(X, k)$sse), times = 3)
+microbenchmark::microbenchmark(sse <- sapply(ks, function(k) pcha(X, k,)$sse), times = 1)
+microbenchmark::microbenchmark(sse <- sapply(ks, function(k) pcha(X, k, num_cores = 8)$sse), times = 1)
 ```
 
 ```{r}
@@ -208,7 +208,7 @@ cat("Optimal number of archetypes =", kp$knee_x, "\n")
 ```
 
 
-We can compare the performance of our rust implementation to the paretoTI package (note that this uses python and requires reticulate).  We see a slight gain in performance... Even a slight loss would still be worth it not to have to deal with python in R.  Although Rust implementation could be optimized further by using openblas libraries, this results in compilation issues across different devices.  Therefore we are sufficiently satisfied with current performance.
+We can compare the performance of our rust implementation of pcha to that implemented in the paretoTI package (note that this uses python and requires reticulate).  We see a slight gain in performance (Even a slight loss would still be worth it not to have to deal with python in R)...  Although Rust implementation could be optimized further by using openblas libraries, this results in a variety of compilation issues across different devices.
 ```{r}
 library(reticulate)
 use_python("/Users/sfurlan/.virtualenvs/reticulate/bin/python")
@@ -226,17 +226,24 @@ cat("Optimal number of archetypes =", kp$knee_x, "\n")
 
 ## T ratio
 
-To obtain the t-ratio we can run the pcha algorithm using the argument calc_t_ratio set to true (is false by default).  The calculation of t-ratio is done in R and therefore not including in the Rust/Python bakeoff above.
+To obtain the t-ratio we can run the pcha algorithm using the argument calc_t_ratio set to true (is false by default).  The calculation of t-ratio is done in R and therefore not including in the Rust/Python bakeoff above.  Performance gains implementing the t-ratio in Rust were not realized.
 ```{r}
-
+library(ggplot2)
 tratios <- sapply(ks, function(k) pcha(X, k, calc_t_ratio = T)$t_ratio)
-kp   <- find_knee_pt(tratios, ks, make_plot = TRUE, y_axis = "T ratio")
 
+ggplot(data.frame(ks = ks, tratios=tratios), aes(x=ks, y=tratios))+
+  geom_line() +
+  geom_point()+theme_bw() + labs(x = "Number of archetypes (k)", y = "T ratio") 
+```
+
+We see a maximum t-ratio at 5, as expected.  To ensure robustness we have implemented similar to that proposed by Korem Y, et. al. in "Geometry of the Gene Expression Space of
+Individual Cells" PLOS Computational Biology 2015.
+
+
+```{r}
 
 
 ```
-
-
 
 ## What does this look like in single cell RNA sequencing data
 
@@ -354,20 +361,21 @@ make_pcha_starts <- function(X, k, rng_seed = 1234, s_rng_seed = 5678){
   list(C0 = C0, S0 = S0)
 }
 
-kmax <- 15
-ks  <- 1:kmax
+kmax <- 8
+ks  <- 2:kmax
 starts <- lapply(ks, function(k){
   make_pcha_starts(X, k,
                    rng_seed   = 1000 + k,
                    s_rng_seed = 2000 + k)
 })
 
-sse  <- sapply(seq_along(ks), function(i){
+res  <- sapply(seq_along(ks), function(i){
   k  <- ks[i]
   C0 <- starts[[i]]$C0
   S0 <- starts[[i]]$S0
   message("running PCHA for k=", k, " …")
-  pcha(X, k, c_init = C0, s_init = S0)$sse
+  res = pcha(X, k, c_init = C0, s_init = S0, calc_t_ratio = T)
+  return(list(sse=res$sse, t_ratio = res$t_ratio))
 })
 
 norm_sse  <- sse / sum(X * X)                           

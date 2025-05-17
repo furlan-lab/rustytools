@@ -13,6 +13,8 @@
 //! -------------------------------------------------------------------------
 //! Copyright © 2025 Scott Furlan – MIT OR Apache‑2.0.
 
+// use core::num;
+
 use extendr_api::prelude::*;
 use ndarray::{Array2, ArrayView2, ShapeBuilder};
 use sprs::CsMat;
@@ -26,6 +28,13 @@ mod magic;
 use crate::align::Aligner;
 use magic::diffuse_expr;            // numerical kernel
 use pcha::PchaOptions;        // PCHA options
+
+
+// somewhere that runs exactly once, e.g. in `lib.rs`
+// use once_cell::sync::Lazy;
+// use rayon::ThreadPoolBuilder;
+
+
 
 //=========================================================================//
 //  dgCMatrix  ↔︎  sprs::CsMat converters                                   //
@@ -171,6 +180,12 @@ fn test_conversion(x: Robj) -> extendr_api::Result<bool> {
     Ok(true) // explicit TRUE so tryCatch gets logical instead of NULL
 }
 
+// static INIT_RAYON: Lazy<()> = Lazy::new(|| {
+//     // ignore the error if somebody else has already built a pool
+//     let _ = ThreadPoolBuilder::new()
+//         .num_threads(1)
+//         .build_global();
+//     });
 
 /// @export
 #[extendr]
@@ -181,8 +196,37 @@ fn pcha_rust(
     s_init: Robj,
     max_iter_arg: Robj,
     conv_crit_arg: Robj,
+    number_of_threads: Robj,
     // calc_t_ratio: Robj,
 ) -> Robj {
+    // Check for valid input
+    let number_of_cores: usize = if let Some(v) = number_of_threads.as_integer_vector() {
+        v[0] as usize
+    } else if let Some(v) = number_of_threads.as_real_vector() {
+        v[0] as usize
+    } else {
+        panic!("`number_of_threads` must be numeric or integer");
+    };
+
+    assert!(number_of_cores > 0, "`number_of_threads` must be > 0");
+    assert!(number_of_cores <= 64, "`number_of_threads` must be ≤ 64");
+
+    // Initialize Rayon thread pool
+    // let _ = ThreadPoolBuilder::new()
+    //     .num_threads(number_of_cores)
+    //     .build_global();
+    // match ThreadPoolBuilder::new()
+    //     .num_threads(number_of_cores)
+    //     .build_global()
+    //     {
+    //         Ok(_)  => eprintln!("Rayon pool initialised with {number_of_cores} threads"),
+    //         Err(e) => eprintln!("Rayon pool already initialised: {e}; keeping the existing pool"),
+    //     }
+    // let _ = ThreadPoolBuilder::new()
+    //     .num_threads(number_of_cores)
+    //     .build()
+    //     .expect("Failed to build thread pool");
+
     // Convert input to Rust ndarray
     let mat: RMatrix<f64> = input_mat
         .try_into()

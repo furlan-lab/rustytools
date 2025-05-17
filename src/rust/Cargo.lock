@@ -569,6 +569,7 @@ dependencies = [
  "ndarray-linalg",
  "ndarray-rand",
  "ndarray-stats",
+ "once_cell",
  "rand",
  "rayon",
  "sprs",
