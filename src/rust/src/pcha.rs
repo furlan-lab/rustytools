@@ -48,6 +48,11 @@ pub fn pcha(
     u_idx: Option<&[usize]>,
     opts: Option<PchaOptions>,
 ) -> Result<PchaResult, Box<dyn Error>> {
+    
+    // println!(
+    //     "Rayon global pool has {} threads.",
+    //     rayon::current_num_threads()
+    // );
     let mut opts = opts.unwrap_or_default();
     // ---- index helpers ------------------------------------------------------
     let i_vec: Vec<usize> = i_idx.map(|v| v.to_vec()).unwrap_or_else(|| (0..x.ncols()).collect());
@@ -381,59 +386,59 @@ fn furthest_sum(k: &Array2<f64>, noc: usize, seed: usize, exclude: &[usize]) -> 
     arche
 }
 
-use qhull::QhBuilder;   // <-- correct types
-use ndarray::s;
-use ndarray_linalg::Determinant;
-use qhull::Vertex;
+// use qhull::QhBuilder;   // <-- correct types
+// use ndarray::s;
+// use ndarray_linalg::Determinant;
+// use qhull::Vertex;
 
-/// Return the volume of the convex hull of `points` (p × n matrix).
-/// `None` → hull is degenerate or has < p + 1 points.
-pub fn _hull_volume(points: &Array2<f64>) -> Option<f64> {
-    let (p, n) = points.dim();
-    if p < 2 || n < p + 1 {
-        return None;
-    }
+// /// Return the volume of the convex hull of `points` (p × n matrix).
+// /// `None` → hull is degenerate or has < p + 1 points.
+// pub fn _hull_volume(points: &Array2<f64>) -> Option<f64> {
+//     let (p, n) = points.dim();
+//     if p < 2 || n < p + 1 {
+//         return None;
+//     }
 
-    // --- 1. Flat buffer for qhull (column-major like ndarray) ------------
-    let mut buf: Vec<f64> = Vec::with_capacity(p * n);
-    for col in 0..n {
-        buf.extend(points.slice(s![.., col]).iter());
-    }
+//     // --- 1. Flat buffer for qhull (column-major like ndarray) ------------
+//     let mut buf: Vec<f64> = Vec::with_capacity(p * n);
+//     for col in 0..n {
+//         buf.extend(points.slice(s![.., col]).iter());
+//     }
 
-    // --- 2. Build the hull ------------------------------------------------
-    let hull = match QhBuilder::default().build(p, &mut buf) {
-        Ok(h) => h,
-        Err(e) => panic!("qhull failed: {e:?}"),
-    };
+//     // --- 2. Build the hull ------------------------------------------------
+//     let hull = match QhBuilder::default().build(p, &mut buf) {
+//         Ok(h) => h,
+//         Err(e) => panic!("qhull failed: {e:?}"),
+//     };
 
-    // --- 3. Centroid as interior reference point -------------------------
-    let centroid: Array1<f64> = points.mean_axis(Axis(1)).unwrap();
+//     // --- 3. Centroid as interior reference point -------------------------
+//     let centroid: Array1<f64> = points.mean_axis(Axis(1)).unwrap();
 
-    // --- 4. Sum simplex volumes over facets ------------------------------
-    let fact = (1..=p).product::<usize>() as f64;           // p!
-    let mut vol = 0.0_f64;
-    for facet in hull.facets() {
-        // 1. unwrap the Option and turn the Set into a Vec
-    let verts_idx: Vec<Vertex> = facet
-        .vertices()          // -> Option<Set<'_, Vertex<'_>>>
-        .unwrap()            // skip non-simplicial
-        .iter()              // &Set   → iterator over &Vertex
-        // .cloned()            // &Vertex → Vertex (copy the handle)
-        .collect();          // iterator → Vec<Vertex>
-        if verts_idx.len() != p { continue; }          // need exactly p vertices
+//     // --- 4. Sum simplex volumes over facets ------------------------------
+//     let fact = (1..=p).product::<usize>() as f64;           // p!
+//     let mut vol = 0.0_f64;
+//     for facet in hull.facets() {
+//         // 1. unwrap the Option and turn the Set into a Vec
+//     let verts_idx: Vec<Vertex> = facet
+//         .vertices()          // -> Option<Set<'_, Vertex<'_>>>
+//         .unwrap()            // skip non-simplicial
+//         .iter()              // &Set   → iterator over &Vertex
+//         // .cloned()            // &Vertex → Vertex (copy the handle)
+//         .collect();          // iterator → Vec<Vertex>
+//         if verts_idx.len() != p { continue; }          // need exactly p vertices
 
-        // 2. use the collected Vec for indexing
-        let mut m = Array2::<f64>::zeros((p, p));
-        for (k, vtx) in verts_idx.iter().enumerate() {
-            // vtx.point() -> &[f64]
-            let vk = Array1::from(vtx.point()?.to_vec());
-            m.column_mut(k).assign(&(&vk - &centroid));
-        }
-        let det = m.det().unwrap();
-        vol += det.abs() / fact;
-    }
+//         // 2. use the collected Vec for indexing
+//         let mut m = Array2::<f64>::zeros((p, p));
+//         for (k, vtx) in verts_idx.iter().enumerate() {
+//             // vtx.point() -> &[f64]
+//             let vk = Array1::from(vtx.point()?.to_vec());
+//             m.column_mut(k).assign(&(&vk - &centroid));
+//         }
+//         let det = m.det().unwrap();
+//         vol += det.abs() / fact;
+//     }
 
-    (vol > 0.0).then_some(vol)
-}
-// -----------------------------------------------------------------------------
-// end of file
+//     (vol > 0.0).then_some(vol)
+// }
+// // -----------------------------------------------------------------------------
+// // end of file
